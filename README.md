@@ -337,45 +337,7 @@ kumuluzee:
 
 Reporters for Graphite and Logstash can be enabled, as well as servlet, which exposes metrics in Prometheus format.
 
-### Graphite
-
-To enable Graphite reporter, add the following dependency:
-
-```xml
-<dependency>
-    <groupId>com.kumuluz.ee.metrics</groupId>
-    <artifactId>kumuluzee-metrics-graphite</artifactId>
-    <version>${kumuluzee-metrics.version}</version>
-</dependency>
-```
-
-The Graphite reporter is configured with the following configuration keys:
-- `kumuluzee.metrics.graphite.address`: Address of the Graphite server. Default value is `127.0.0.1`.
-- `kumuluzee.metrics.graphite.port`: Port on which the Graphite server listens. Default value is `2003` if pickle
-parameter is set to `false`, otherwise `2004`.
-- `kumuluzee.metrics.graphite.period-s`: Period in seconds, on which metrics are reported to Graphite. Default value is
-`60`.
-- `kumuluzee.metrics.graphite.pickle`: Use
-[pickle protocol](http://graphite.readthedocs.io/en/latest/feeding-carbon.html#the-pickle-protocol). Default value is
-`true`.
-
-Example of the configuration:
-
-```yaml
-kumuluzee:
-    metrics:
-        graphite:
-            address: 192.168.0.1
-            #port: 2003
-            periods: 5
-            pickle: true
-```
-
-The naming scheme for this measuring tools is `KumuluzEE`, followed by the environment, service name, version, instance
-ID and the metric name, all dot separated. Here is an example of a metric's name:
-`KumuluzEE.dev.metrics-sample.0_0_7.instance1.MemoryUsage`.
-
-#### Prometheus
+### Prometheus
 
 To enable servlet, which exposes metrics in the Prometheus format, add the following dependency:
 
@@ -415,7 +377,73 @@ converted to `_`. Service information is reported through the metric labels.
 Here is an example of the metric:
 `KumuluzEE_com_kumuluz_ee_samples_kumuluzee_metrics_CustomerResource_customer_counter{environment="dev",serviceName="metrics-sample",serviceVersion="0.0.7",instanceId="instance1",} 5.0`
 
-#### Logstash
+### Graphite
+
+To enable Graphite reporter, add the following dependency:
+
+```xml
+<dependency>
+    <groupId>com.kumuluz.ee.metrics</groupId>
+    <artifactId>kumuluzee-metrics-graphite</artifactId>
+    <version>${kumuluzee-metrics.version}</version>
+</dependency>
+```
+
+The Graphite reporter is configured with the following configuration keys:
+- `kumuluzee.metrics.graphite.address`: Address of the Graphite server. Default value is `127.0.0.1`.
+- `kumuluzee.metrics.graphite.port`: Port on which the Graphite server listens. Default value is `2003` if pickle
+parameter is set to `false`, otherwise `2004`.
+- `kumuluzee.metrics.graphite.period-s`: Period in seconds, on which metrics are reported to Graphite. Default value is
+`60`.
+- `kumuluzee.metrics.graphite.pickle`: Use
+[pickle protocol](http://graphite.readthedocs.io/en/latest/feeding-carbon.html#the-pickle-protocol). Default value is
+`true`.
+
+Example of the configuration:
+
+```yaml
+kumuluzee:
+    metrics:
+        graphite:
+            address: 192.168.0.1
+            #port: 2003
+            periods: 5
+            pickle: true
+```
+
+The naming scheme for this measuring tools is `KumuluzEE`, followed by the environment, service name, version, instance
+ID and the metric name, all dot separated. Here is an example of a metric's name:
+`KumuluzEE.dev.metrics-sample.0_0_7.instance1.MemoryUsage`.
+
+### KumuluzEE Logs
+
+The metrics can be reported either through `kumuluzee-logs` or the JUL library. The module automatically picks the right logger based on what is included in the project.
+To enable the Logs reporter, add the following dependency:
+
+```xml
+<dependency>
+    <groupId>com.kumuluz.ee.metrics</groupId>
+    <artifactId>kumuluzee-metrics-logs</artifactId>
+    <version>${kumuluzee-metrics.version}</version>
+</dependency>
+```
+
+Logs reporter can be configured using the following configuration keys:
+- `kumuluzee.metrics.logs.period-s`: Period in seconds, on which metrics are logged. The default value is `60`.
+- `kumuluzee.metrics.logs.level`: Logging level. Default value is `DEBUG` or `FINE` if you are using JUL.
+
+```yaml
+kumuluzee:
+    metrics:
+        logstash:
+            logs:
+            period-s: 60
+            level: INFO
+```
+
+The metrics are logged in the same json format as in the servlet.
+
+### Logstash
 
 To enable Logstash reporter, add the following dependency:
 
@@ -452,34 +480,6 @@ input {
 	}
 }
 ```
-
-#### Logs
-
-The metrics can be reported either through `kumuluzee-logs` or the JUL library. The module automatically picks the right logger based on what is included in the project.
-To enable the Logs reporter, add the following dependency:
-
-```xml
-<dependency>
-    <groupId>com.kumuluz.ee.metrics</groupId>
-    <artifactId>kumuluzee-metrics-logs</artifactId>
-    <version>${kumuluzee-metrics.version}</version>
-</dependency>
-```
-
-Logs reporter can be configured using the following configuration keys:
-- `kumuluzee.metrics.logs.period-s`: Period in seconds, on which metrics are logged. The default value is `60`.
-- `kumuluzee.metrics.logs.level`: Logging level. Default value is `DEBUG` or `FINE` if you are using JUL.
-
-```yaml
-kumuluzee:
-    metrics:
-        logstash:
-            logs:
-            period-s: 60
-            level: INFO
-```
-
-The metrics are logged in the same json format as in the servlet.
 
 ## Changelog
 
