@@ -6,7 +6,15 @@
 
     <groupId>com.kumuluz.ee.metrics</groupId>
     <artifactId>kumuluzee-metrics</artifactId>
+    <packaging>pom</packaging>
     <version>1.0.0-SNAPSHOT</version>
+    <modules>
+        <module>core</module>
+        <module>graphite</module>
+        <module>logstash</module>
+        <module>prometheus</module>
+        <module>logs</module>
+    </modules>
 
     <name>KumuluzEE Metrics</name>
 
@@ -22,7 +30,11 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <kumuluzee.version>2.4.0</kumuluzee.version>
+        <kumuluzee.version>2.4.1</kumuluzee.version>
+
+        <dropwizard-metrics.version>3.2.4</dropwizard-metrics.version>
+        <cdi-metrics.version>1.4.0</cdi-metrics.version>
+        <prometheus-client.version>0.0.26</prometheus-client.version>
 
         <maven-compiler-plugin.version>3.6.1</maven-compiler-plugin.version>
         <nexus.staging.plugin.version>1.6.8</nexus.staging.plugin.version>
@@ -41,6 +53,12 @@
     </issueManagement>
 
     <developers>
+        <developer>
+            <name>Aljaž Blažej</name>
+            <id>aljazb</id>
+            <email>aljaz.blazej@gmail.com</email>
+            <url>https://github.com/aljazb</url>
+        </developer>
         <developer>
             <name>Tilen Faganel</name>
             <id>tfaga</id>
@@ -72,16 +90,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>com.kumuluz.ee.metrics</groupId>
+                <artifactId>kumuluzee-metrics-core</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.kumuluz.ee</groupId>
-            <artifactId>kumuluzee-common</artifactId>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
 
     <build>
         <plugins>
