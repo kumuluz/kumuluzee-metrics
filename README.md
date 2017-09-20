@@ -4,8 +4,11 @@
 > Metrics extension for the KumuluzEE microservice framework
 
 KumuluzEE Metrics is a metrics collecting extension for the KumuluzEE microservice framework. It provides support for collecting different system, application and user-defined metrics and exposing them as in different ways. Metrics can be exposed on a URL, as a JSON object on in Prometheus format. 
+
 KumuluzEE Metrics currently provides support for Prometheus, Graphite, KumuluzEE Logs and Logstash reporters and a servlet, which exposes metrics in JSON or Prometheus format.
+
 KumuluzEE Metrics includes modules for automatic collection of JVM and web application metrics. It supports easy definition and collection of application specific metrics, as described below. 
+
 The implementation is based on Dropwizard metrics. More information about their implementation can be found on [github](https://github.com/dropwizard/metrics) or their [official page](http://metrics.dropwizard.io).
 
 ## Usage
