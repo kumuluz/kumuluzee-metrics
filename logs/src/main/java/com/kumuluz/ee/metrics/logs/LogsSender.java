@@ -18,6 +18,7 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
 */
+package com.kumuluz.ee.metrics.logs;
 
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
@@ -27,8 +28,6 @@ import com.kumuluz.ee.metrics.json.models.ServletExport;
 import com.kumuluz.ee.metrics.utils.EnabledRegistries;
 import com.kumuluz.ee.metrics.utils.KumuluzEEMetricRegistries;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -47,8 +46,8 @@ public class LogsSender implements Runnable {
     private static final Logger LOG = Logger.getLogger(LogsSender.class.getName());
     private static Level LEVEL;
 
-    private EnabledRegistries enabledRegistries;
     private ObjectMapper mapper;
+    private EnabledRegistries enabledRegistries;
 
     public LogsSender(String level) {
         this.enabledRegistries = EnabledRegistries.getInstance();
@@ -60,24 +59,21 @@ public class LogsSender implements Runnable {
 
     @Override
     public void run() {
-        Map<String, MetricRegistry> registries = new HashMap<>();
-
-        Set<String> registriesToSend = new HashSet<>(KumuluzEEMetricRegistries.names());
-        registriesToSend.retainAll(enabledRegistries.getEnabledRegistries());
-
-        for (String registryName : registriesToSend) {
-            registries.put(registryName, KumuluzEEMetricRegistries.getOrCreate(registryName));
-        }
-
-        ServletExport servletExport = new ServletExport(KumuluzEEMetricRegistries.names(), registries);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
         try {
-            this.mapper.writer().writeValue(outputStream, servletExport);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            LOG.log(LEVEL, outputStream.toString());
+            Map<String, MetricRegistry> registries = new HashMap<>();
+
+            Set<String> registriesToSend = new HashSet<>(KumuluzEEMetricRegistries.names());
+            registriesToSend.retainAll(enabledRegistries.getEnabledRegistries());
+
+            for (String registryName : registriesToSend) {
+                registries.put(registryName, KumuluzEEMetricRegistries.getOrCreate(registryName));
+            }
+
+            ServletExport servletExport = new ServletExport(KumuluzEEMetricRegistries.names(), registries);
+
+            LOG.log(LEVEL, this.mapper.writer().writeValueAsString(servletExport));
+        } catch (Exception exception) {
+            LOG.log(Level.SEVERE, "An error occurred when trying to log metrics.", exception);
         }
     }
 }
