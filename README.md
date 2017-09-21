@@ -5,7 +5,7 @@
 
 KumuluzEE Metrics is a metrics collecting extension for the KumuluzEE microservice framework. It provides support for collecting different system, application and user-defined metrics and exposing them as in different ways. Metrics can be exposed on a URL, as a JSON object on in Prometheus format. 
 
-KumuluzEE Metrics currently provides support for Prometheus, Graphite, KumuluzEE Logs and Logstash reporters and a servlet, which exposes metrics in JSON or Prometheus format.
+KumuluzEE Metrics currently provides support for Prometheus, Graphite, Logs and Logstash reporters and a servlet, which exposes metrics in JSON or Prometheus format.
 
 KumuluzEE Metrics includes modules for automatic collection of JVM and web application metrics. It supports easy definition and collection of application specific metrics, as described below. 
 
@@ -417,10 +417,9 @@ The naming scheme for this measuring tools is `KumuluzEE`, followed by the envir
 ID and the metric name, all dot separated. Here is an example of a metric's name:
 `KumuluzEE.dev.metrics-sample.0_0_7.instance1.MemoryUsage`.
 
-### KumuluzEE Logs
+### Logs
 
-The metrics can be reported either through `kumuluzee-logs` or the JUL library. The module automatically picks the right logger based on what is included in the project.
-To enable the Logs reporter, add the following dependency:
+The metrics can be reported to the logs. To enable the Logs reporter, add the following dependency:
 
 ```xml
 <dependency>
@@ -432,7 +431,7 @@ To enable the Logs reporter, add the following dependency:
 
 Logs reporter can be configured using the following configuration keys:
 - `kumuluzee.metrics.logs.period-s`: Period in seconds, on which metrics are logged. The default value is `60`.
-- `kumuluzee.metrics.logs.level`: Logging level. Default value is `DEBUG` or `FINE` if you are using JUL.
+- `kumuluzee.metrics.logs.level`: Logging level. Default value is `FINE`.
 
 ```yaml
 kumuluzee:

@@ -38,7 +38,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Runnable, which sends metrics to KumuluzEE Logs.
+ * Runnable, which logs metrics.
  *
  * @author Aljaž Blažej, Urban Malc
  */

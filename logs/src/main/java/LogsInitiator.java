@@ -43,7 +43,7 @@ public class LogsInitiator {
 
         boolean enabled = configurationUtil.getBoolean("kumuluzee.metrics.logs.enabled").orElse(true);
         int periodSeconds = configurationUtil.getInteger("kumuluzee.metrics.logs.period-s").orElse(60);
-        String level = configurationUtil.get("kumuluzee.metrics.logs.level").orElse("DEBUG");
+        String level = configurationUtil.get("kumuluzee.metrics.logs.level").orElse("FINE");
 
         if (enabled) {
             LogsSender sender = new LogsSender(level);
