@@ -22,10 +22,6 @@
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kumuluz.ee.common.runtime.EeRuntime;
-import com.kumuluz.ee.logs.LogManager;
-import com.kumuluz.ee.logs.Logger;
-import com.kumuluz.ee.logs.enums.LogLevel;
 import com.kumuluz.ee.metrics.json.ServletExportModule;
 import com.kumuluz.ee.metrics.json.models.ServletExport;
 import com.kumuluz.ee.metrics.utils.EnabledRegistries;
@@ -33,9 +29,13 @@ import com.kumuluz.ee.metrics.utils.KumuluzEEMetricRegistries;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Runnable, which sends metrics to KumuluzEE Logs.
@@ -44,33 +44,18 @@ import java.util.stream.Collectors;
  */
 public class LogsSender implements Runnable {
 
-    private static Logger log = null;
-    private static java.util.logging.Logger JULLog = null;
+    private static final Logger LOG = Logger.getLogger(LogsSender.class.getName());
+    private static Level LEVEL;
 
     private EnabledRegistries enabledRegistries;
     private ObjectMapper mapper;
-    private LogLevel level;
-    private java.util.logging.Level JULLevel;
-    private boolean kumuluzEELogs = false;
 
-    public LogsSender(String loggingLevel) {
+    public LogsSender(String level) {
         this.enabledRegistries = EnabledRegistries.getInstance();
         this.mapper = (new ObjectMapper()).registerModule(new ServletExportModule(TimeUnit.SECONDS, TimeUnit.SECONDS,
                 true, MetricFilter.ALL));
 
-        List<String> availableExtensionGroups = EeRuntime.getInstance().getEeExtensions().stream().map(e -> e
-                .getGroup()).collect(Collectors.toList());
-        if (availableExtensionGroups.contains("logs")) {
-            kumuluzEELogs = true;
-        }
-
-        if (kumuluzEELogs) {
-            this.level = stringToLevel(loggingLevel);
-            log = LogManager.getLogger(LogsSender.class.getName());
-        } else {
-            this.JULLevel = stringToJULLevel(loggingLevel);
-            JULLog = java.util.logging.Logger.getLogger(LogsSender.class.getName());
-        }
+        this.LEVEL = Level.parse(level.toUpperCase());
     }
 
     @Override
@@ -85,7 +70,6 @@ public class LogsSender implements Runnable {
         }
 
         ServletExport servletExport = new ServletExport(KumuluzEEMetricRegistries.names(), registries);
-
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         try {
@@ -93,53 +77,7 @@ public class LogsSender implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (kumuluzEELogs) {
-                log.log(level, outputStream.toString());
-            } else {
-                JULLog.log(JULLevel, outputStream.toString());
-            }
-        }
-    }
-
-    private LogLevel stringToLevel(String level) {
-        String lowLevel = level.toLowerCase();
-        switch (lowLevel) {
-            case "finest":
-                return LogLevel.FINEST;
-            case "trace":
-                return LogLevel.TRACE;
-            case "debug":
-                return LogLevel.DEBUG;
-            case "info":
-                return LogLevel.INFO;
-            case "warn":
-                return LogLevel.WARN;
-            case "error":
-                return LogLevel.ERROR;
-            default:
-                return LogLevel.DEBUG;
-        }
-    }
-
-    private java.util.logging.Level stringToJULLevel(String level) {
-        String lowLevel = level.toLowerCase();
-        switch (lowLevel) {
-            case "severe":
-                return java.util.logging.Level.SEVERE;
-            case "warning":
-                return java.util.logging.Level.WARNING;
-            case "info":
-                return java.util.logging.Level.INFO;
-            case "config":
-                return java.util.logging.Level.CONFIG;
-            case "fine":
-                return java.util.logging.Level.FINE;
-            case "finer":
-                return java.util.logging.Level.FINER;
-            case "finest":
-                return java.util.logging.Level.FINEST;
-            default:
-                return java.util.logging.Level.FINE;
+            LOG.log(LEVEL, outputStream.toString());
         }
     }
 }

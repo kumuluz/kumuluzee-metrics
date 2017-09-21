@@ -26,12 +26,6 @@
             <artifactId>kumuluzee-cdi-weld</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>com.kumuluz.ee.logs</groupId>
-            <artifactId>kumuluzee-logs-common</artifactId>
-            <version>${logs.version}</version>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
 
 </project>
