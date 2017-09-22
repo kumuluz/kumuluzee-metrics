@@ -205,7 +205,8 @@ kumuluzee:
           registry-name: myJvm
 ```
 
-JVM monitoring can also be enabled or disabled through metrics endpoint by using query parameters `enable` or `disable`.
+JVM monitoring can also be [enabled or disabled](#enable_disable_registries) through metrics endpoint by using query 
+parameters `enable` or `disable`.
 
 ## Servlet
 
@@ -288,7 +289,7 @@ For example, if you only want to show the `my_custom_registry` registry, you wou
 `/metrics?id=my_custom_registry`. 
 You can also filter two or more registries by adding multiple ids: `/metrics?id=registry_1&id=registry_2`. 
 
-#### Enable/Disable registries
+#### <a name="enable_disable_registries"></a> Enable/Disable registries
 
 You can also enable or disable reporting of any registry by adding the `enable` and `disable` parameter respectively:
  - disable example: `/metrics?disable=my_registry`
@@ -419,7 +420,7 @@ ID and the metric name, all dot separated. Here is an example of a metric's name
 
 ### Logs
 
-The metrics can be reported to the logs. To enable the Logs reporter, add the following dependency:
+The metrics can be reported to the available logging framework. To enable the Logs reporter, add the following dependency:
 
 ```xml
 <dependency>
