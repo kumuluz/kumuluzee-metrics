@@ -245,7 +245,7 @@ Example of the servlet output:
         "GarbageCollector.PS-MarkSweep.count" : {
           "value" : 1
         },
-        ...
+        . . .
       }
     },
     "default" : {
@@ -264,7 +264,7 @@ Example of the servlet output:
           "mean_rate" : 0.0015924774955522764,
           "units" : "events/second"
         },
-        ...
+        . . .
       }
     }
   }
