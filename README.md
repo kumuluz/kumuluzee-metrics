@@ -11,6 +11,8 @@ KumuluzEE Metrics includes modules for automatic collection of JVM and web appli
 
 The implementation is based on Dropwizard metrics. More information about their implementation can be found on [github](https://github.com/dropwizard/metrics) or their [official page](http://metrics.dropwizard.io).
 
+We are working on making KumuluzEE Metrics fully compliant with MicroProfile Metrics.
+
 ## Usage
 
 You can enable the metrics extension by adding the following dependency:
