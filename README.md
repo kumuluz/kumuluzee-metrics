@@ -320,19 +320,19 @@ kumuluzee:
   env:
     name: test
   metrics:
-    genericregistryname: default
+    generic-registry-name: default
     jvm:
       enabled: true
-      registry: jvm
+      registry-name: jvm
     servlet:
       enabled: true
       mapping: /metrics
-    webinstrumentation:
+    web-instrumentation:
       - name: metrics-endpoint
-        urlpattern: /metrics/*
-        registryname: default
+        url-pattern: /metrics/*
+        registry-name: default
       - name: prometheus-endpoint
-        urlpattern: /prometheus/*
+        url-pattern: /prometheus/*
 
 ```
 
