@@ -22,19 +22,22 @@ package com.kumuluz.ee.metrics;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
  * Schedules {@link LogstashSender}.
  *
- * @author Urban Malc, Aljaž Blažej
+ * @author Urban Malc
+ * @author Aljaž Blažej
  */
 public class KumuluzEELogstashReporter {
 
     private static final Logger log = Logger.getLogger(KumuluzEELogstashReporter.class.getName());
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private ScheduledFuture handle;
 
     private String address;
     private int port;
@@ -55,6 +58,10 @@ public class KumuluzEELogstashReporter {
     public void start() {
         log.info("Starting Logstash reporter.");
         LogstashSender sender = new LogstashSender(address, port, startRetryDelay, maxRetryDelay);
-        scheduler.scheduleWithFixedDelay(sender, 0, periodSeconds, TimeUnit.SECONDS);
+        handle = scheduler.scheduleWithFixedDelay(sender, 0, periodSeconds, TimeUnit.SECONDS);
+    }
+
+    public void stop() {
+        handle.cancel(true);
     }
 }

@@ -22,22 +22,27 @@ package com.kumuluz.ee.metrics.logs;
 
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 
+import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Initializes Logs reporter.
  *
- * @author Aljaž Blažej, Urban Malc
+ * @author Aljaž Blažej
+ * @author Urban Malc
  */
 @ApplicationScoped
 public class LogsInitiator {
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+    private ScheduledFuture handle;
 
     private void initialiseBean(@Observes @Initialized(ApplicationScoped.class) Object init) {
         ConfigurationUtil configurationUtil = ConfigurationUtil.getInstance();
@@ -48,7 +53,12 @@ public class LogsInitiator {
 
         if (enabled) {
             LogsSender sender = new LogsSender(level);
-            scheduler.scheduleWithFixedDelay(sender, 0, periodSeconds, TimeUnit.SECONDS);
+            handle = scheduler.scheduleWithFixedDelay(sender, 0, periodSeconds, TimeUnit.SECONDS);
         }
+    }
+
+    @PreDestroy
+    private void closeHandle() {
+        handle.cancel(true);
     }
 }

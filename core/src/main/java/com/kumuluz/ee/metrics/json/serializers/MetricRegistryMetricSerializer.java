@@ -18,37 +18,36 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
 */
-package com.kumuluz.ee.metrics;
+package com.kumuluz.ee.metrics.json.serializers;
 
-import com.kumuluz.ee.common.Extension;
-import com.kumuluz.ee.common.config.EeConfig;
-import com.kumuluz.ee.common.dependencies.EeComponentDependency;
-import com.kumuluz.ee.common.dependencies.EeComponentType;
-import com.kumuluz.ee.common.dependencies.EeExtensionDef;
-import com.kumuluz.ee.common.dependencies.EeExtensionGroup;
-import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 
-import java.util.logging.Logger;
+import java.io.IOException;
+import java.util.Map;
 
 /**
- * KumuluzEE framework extension for Metrics.
+ * Serializer for MetricRegistry, which exposes metrics.
  *
  * @author Urban Malc
  * @author Aljaž Blažej
  */
-@EeExtensionDef(name = "MetricsCommons", group = EeExtensionGroup.METRICS)
-@EeComponentDependency(EeComponentType.CDI)
-public class MetricsExtension implements Extension {
+public class MetricRegistryMetricSerializer extends StdSerializer<MetricRegistry> {
 
-    private static final Logger log = Logger.getLogger(MetricsExtension.class.getName());
-
-    @Override
-    public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
-
-        log.info("Initialising Metrics common module.");
+    public MetricRegistryMetricSerializer() {
+        super(MetricRegistry.class);
     }
 
     @Override
-    public void load() {
+    public void serialize(MetricRegistry metricRegistry, JsonGenerator json,
+                          SerializerProvider provider)throws IOException {
+        json.writeStartObject();
+        for(Map.Entry<String, Metric> entry : metricRegistry.getMetrics().entrySet()) {
+            json.writeObjectField(entry.getKey(), entry.getValue());
+        }
+        json.writeEndObject();
     }
 }

@@ -18,37 +18,47 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
 */
-package com.kumuluz.ee.metrics;
+package com.kumuluz.ee.metrics.api;
 
-import com.kumuluz.ee.common.Extension;
-import com.kumuluz.ee.common.config.EeConfig;
-import com.kumuluz.ee.common.dependencies.EeComponentDependency;
-import com.kumuluz.ee.common.dependencies.EeComponentType;
-import com.kumuluz.ee.common.dependencies.EeExtensionDef;
-import com.kumuluz.ee.common.dependencies.EeExtensionGroup;
-import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
-
-import java.util.logging.Logger;
+import com.codahale.metrics.ExponentiallyDecayingReservoir;
+import org.eclipse.microprofile.metrics.Histogram;
+import org.eclipse.microprofile.metrics.Snapshot;
 
 /**
- * KumuluzEE framework extension for Metrics.
+ * Microprofile Histogram implementation.
  *
  * @author Urban Malc
  * @author Aljaž Blažej
  */
-@EeExtensionDef(name = "MetricsCommons", group = EeExtensionGroup.METRICS)
-@EeComponentDependency(EeComponentType.CDI)
-public class MetricsExtension implements Extension {
+public class HistogramImpl implements Histogram {
 
-    private static final Logger log = Logger.getLogger(MetricsExtension.class.getName());
+    private com.codahale.metrics.Histogram histogram;
 
-    @Override
-    public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
+    public HistogramImpl() {
+        this.histogram = new com.codahale.metrics.Histogram(new ExponentiallyDecayingReservoir());
+    }
 
-        log.info("Initialising Metrics common module.");
+    public HistogramImpl(com.codahale.metrics.Histogram histogram) {
+        this.histogram = histogram;
     }
 
     @Override
-    public void load() {
+    public void update(int i) {
+        this.histogram.update(i);
+    }
+
+    @Override
+    public void update(long l) {
+        this.histogram.update(l);
+    }
+
+    @Override
+    public long getCount() {
+        return this.histogram.getCount();
+    }
+
+    @Override
+    public Snapshot getSnapshot() {
+        return new SnapshotImpl(this.histogram.getSnapshot());
     }
 }

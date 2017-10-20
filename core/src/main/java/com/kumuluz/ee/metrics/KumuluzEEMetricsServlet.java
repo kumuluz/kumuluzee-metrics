@@ -20,114 +20,150 @@
 */
 package com.kumuluz.ee.metrics;
 
-import com.codahale.metrics.MetricFilter;
-import com.codahale.metrics.MetricRegistry;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.kumuluz.ee.metrics.json.ServletExportModule;
-import com.kumuluz.ee.metrics.json.models.ServletExport;
-import com.kumuluz.ee.metrics.utils.EnabledRegistries;
-import com.kumuluz.ee.metrics.utils.KumuluzEEMetricRegistries;
+import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
+import com.kumuluz.ee.metrics.json.MetricsModule;
+import com.kumuluz.ee.metrics.prometheus.PrometheusMetricWriter;
+import com.kumuluz.ee.metrics.utils.RequestInfo;
+import com.kumuluz.ee.metrics.utils.ServiceConfigInfo;
 
 import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
- * Servlet, which exposes metrics.
+ * Servlet, which exposes metrics in JSON and Prometheus format.
  *
  * @author Urban Malc, Aljaž Blažej
  */
 public class KumuluzEEMetricsServlet extends HttpServlet {
 
-    private static final String RATE_UNIT = KumuluzEEMetricsServlet.class.getCanonicalName() + ".rateUnit";
-    private static final String DURATION_UNIT = KumuluzEEMetricsServlet.class.getCanonicalName() + ".durationUnit";
-    private static final String SHOW_SAMPLES = KumuluzEEMetricsServlet.class.getCanonicalName() + ".showSamples";
-    private static final String METRIC_FILTER = KumuluzEEMetricsServlet.class.getCanonicalName() + ".metricFilter";
-    private static final String CONTENT_TYPE = "application/json";
-    private static final String JSON_ID_PARAM = "id";
-    private static final String JSON_ENABLE_PARAM = "enable";
-    private static final String JSON_DISABLE_PARAM = "disable";
+    private static final String DEBUG_KEY = "kumuluzee.debug";
 
-    private transient ObjectMapper mapper;
+    private ObjectMapper metricMapper;
+    private ObjectMapper metadataMapper;
 
-    private EnabledRegistries enabledRegistries;
+    private boolean jsonServletEnabled;
 
+    @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        ServletContext context = config.getServletContext();
-        TimeUnit rateUnit = this.parseTimeUnit(context.getInitParameter(RATE_UNIT), TimeUnit.SECONDS);
-        TimeUnit durationUnit = this.parseTimeUnit(context.getInitParameter(DURATION_UNIT), TimeUnit.SECONDS);
-        boolean showSamples = Boolean.parseBoolean(context.getInitParameter(SHOW_SAMPLES));
-        MetricFilter filter = (MetricFilter) context.getAttribute(METRIC_FILTER);
-        if (filter == null) {
-            filter = MetricFilter.ALL;
-        }
 
-        enabledRegistries = EnabledRegistries.getInstance();
+        this.metricMapper = new ObjectMapper().registerModule(new MetricsModule(false));
+        this.metadataMapper = new ObjectMapper().registerModule(new MetricsModule(true));
 
-        this.mapper = (new ObjectMapper()).registerModule(new ServletExportModule(rateUnit, durationUnit, showSamples,
-                filter));
-    }
-
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        response.setContentType(CONTENT_TYPE);
-
-        response.setHeader("Cache-Control", "must-revalidate,no-cache,no-store");
-        response.setStatus(200);
-
-        try (ServletOutputStream output = response.getOutputStream()) {
-            String[] registryIds = request.getParameterValues(JSON_ID_PARAM);
-            String[] enableRegistries = request.getParameterValues(JSON_ENABLE_PARAM);
-            String[] disableRegistries = request.getParameterValues(JSON_DISABLE_PARAM);
-
-            if (disableRegistries != null) {
-                for (String registry : disableRegistries) {
-                    enabledRegistries.disableRegistry(registry);
+        this.jsonServletEnabled = true;
+        if(!"dev".equalsIgnoreCase(ServiceConfigInfo.getInstance().getEnvironment())) {
+            ConfigurationUtil configurationUtil = ConfigurationUtil.getInstance();
+            this.jsonServletEnabled = configurationUtil.getBoolean(DEBUG_KEY).orElse(false);
+            configurationUtil.subscribe(DEBUG_KEY, (String key, String value) -> {
+                if (DEBUG_KEY.equals(key)) {
+                    jsonServletEnabled = "true".equalsIgnoreCase(value.toLowerCase());
                 }
-            }
-            if (enableRegistries != null) {
-                for (String registry : enableRegistries) {
-                    enabledRegistries.enableRegistry(registry);
-                }
-            }
-
-            Map<String, MetricRegistry> registries = new HashMap<>();
-
-            Set<String> registriesToSend = new HashSet<>(KumuluzEEMetricRegistries.names());
-            registriesToSend.retainAll(enabledRegistries.getEnabledRegistries());
-            if (registryIds != null) {
-                registriesToSend.retainAll(new HashSet<>(Arrays.asList(registryIds)));
-            }
-
-            for (String registryName : registriesToSend) {
-                registries.put(registryName, KumuluzEEMetricRegistries.getOrCreate(registryName));
-            }
-
-            ServletExport servletExport = new ServletExport(KumuluzEEMetricRegistries.names(), registries);
-            this.getWriter(request).writeValue(output, servletExport);
-        } catch (Exception e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Something went wrong.");
+            });
         }
     }
 
-    private ObjectWriter getWriter(HttpServletRequest request) {
+    @Override
+    public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        RequestInfo requestInfo = new RequestInfo(request);
+
+        if(requestInfo.getRequestType() == RequestInfo.RequestType.INVALID ||
+                !jsonServletEnabled && (
+                requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METADATA ||
+                requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METRIC)) {
+            response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+        }
+
+        if(requestInfo.getRequestType() != RequestInfo.RequestType.INVALID) {
+
+            switch (requestInfo.getRequestType()) {
+                case JSON_METRIC:
+                case JSON_METADATA:
+                    response.setContentType(MediaType.APPLICATION_JSON);
+                    break;
+                case PROMETHEUS:
+                    response.setContentType("text/plain; version=0.0.4; charset=utf-8");
+                    break;
+            }
+
+            switch (requestInfo.getMetricsRequested()) {
+                case NOT_FOUND:
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    return;
+                case NO_CONTENT:
+                    response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                    return;
+            }
+
+            response.setHeader("Cache-Control", "must-revalidate,no-cache,no-store");
+
+            if(requestInfo.getRequestType() == RequestInfo.RequestType.PROMETHEUS) {
+                PrintWriter writer = response.getWriter();
+                PrometheusMetricWriter prometheusMetricWriter = new PrometheusMetricWriter(writer);
+
+                try {
+                    switch (requestInfo.getMetricsRequested()) {
+                        case ALL:
+                            prometheusMetricWriter.write(requestInfo.getRequestedRegistries());
+                            break;
+                        case REGISTRY:
+                            prometheusMetricWriter.write(requestInfo.getSingleRequestedRegistryName(),
+                                    requestInfo.getSingleRequestedRegistry());
+                            break;
+                        case METRIC:
+                            prometheusMetricWriter.write(requestInfo.getSingleRequestedRegistryName(),
+                                    requestInfo.getSingleRequestedRegistry(), requestInfo.getMetricName());
+                            break;
+                    }
+                } catch (IOException e) {
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Error exporting Prometheus metrics.");
+                }
+
+                response.setStatus(HttpServletResponse.SC_OK);
+            } else {
+                Object value = null;
+                switch (requestInfo.getMetricsRequested()) {
+                    case ALL:
+                        value = requestInfo.getRequestedRegistries();
+                        break;
+                    case REGISTRY:
+                        value = requestInfo.getSingleRequestedRegistry();
+                        break;
+                    case METRIC:
+                        if(requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METADATA) {
+                            value = Collections.singletonMap(requestInfo.getMetricName(), requestInfo.getMetadata());
+                        } else {
+                            value = Collections.singletonMap(requestInfo.getMetricName(), requestInfo.getMetric());
+                        }
+                        break;
+                }
+                try (ServletOutputStream output = response.getOutputStream()) {
+                    this.getWriter(request, requestInfo.getRequestType()).writeValue(output, value);
+                    response.setStatus(HttpServletResponse.SC_OK);
+                } catch (Exception e) {
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Error exporting JSON metrics.");
+                }
+            }
+        } else {
+            response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+        }
+    }
+
+    private ObjectWriter getWriter(HttpServletRequest request, RequestInfo.RequestType requestType) {
         boolean prettyPrintOff = "false".equals(request.getParameter("pretty"));
-        return prettyPrintOff ? this.mapper.writer() : this.mapper.writerWithDefaultPrettyPrinter();
-    }
+        ObjectMapper mapper = (requestType == RequestInfo.RequestType.JSON_METADATA) ? this.metadataMapper : this.metricMapper;
 
-    private TimeUnit parseTimeUnit(String value, TimeUnit defaultValue) {
-        try {
-            return TimeUnit.valueOf(String.valueOf(value).toUpperCase(Locale.US));
-        } catch (IllegalArgumentException var4) {
-            return defaultValue;
-        }
+        return prettyPrintOff ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter();
     }
 }

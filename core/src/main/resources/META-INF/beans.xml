@@ -5,4 +5,10 @@
 		http://xmlns.jcp.org/xml/ns/javaee/beans_1_2.xsd"
        bean-discovery-mode="annotated">
 
+    <interceptors>
+        <class>com.kumuluz.ee.metrics.interceptors.CountedInterceptor</class>
+        <class>com.kumuluz.ee.metrics.interceptors.MeteredInterceptor</class>
+        <class>com.kumuluz.ee.metrics.interceptors.TimedInterceptor</class>
+    </interceptors>
+
 </beans>

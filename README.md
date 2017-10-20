@@ -3,15 +3,15 @@
 
 > Metrics extension for the KumuluzEE microservice framework
 
-KumuluzEE Metrics is a metrics collecting extension for the KumuluzEE microservice framework. It provides support for collecting different system, application and user-defined metrics and exposing them as in different ways. Metrics can be exposed on a URL, as a JSON object on in Prometheus format. 
+KumuluzEE Metrics is a metrics collecting extension for the KumuluzEE microservice framework. It provides support for collecting different system, application and user-defined metrics and exposing them as in different ways. Metrics can be exposed on a URL, as a JSON object or in Prometheus format. 
 
-KumuluzEE Metrics currently provides support for Prometheus, Graphite, Logs and Logstash reporters and a servlet, which exposes metrics in JSON or Prometheus format.
+KumuluzEE Metrics currently provides support Logs and Logstash reporters and a servlet, which exposes metrics in JSON or Prometheus format.
 
-KumuluzEE Metrics includes modules for automatic collection of JVM and web application metrics. It supports easy definition and collection of application specific metrics, as described below. 
+KumuluzEE Metrics includes modules for automatic collection of JVM metrics. It supports easy definition and collection of application specific metrics, as described below. 
 
 The implementation is based on Dropwizard metrics. More information about their implementation can be found on [github](https://github.com/dropwizard/metrics) or their [official page](http://metrics.dropwizard.io).
 
-We are working on making KumuluzEE Metrics fully compliant with MicroProfile Metrics.
+We are working on making KumuluzEE Metrics fully compliant with MicroProfile Metrics. This is a development version and may not be fully stable.
 
 ## Usage
 
@@ -28,22 +28,10 @@ You can enable the metrics extension by adding the following dependency:
 
 There are several different measuring tools available: 
 
-- Gauge: measures a simple value
 - Counter: measures an integer, which can increase and decrease
 - Histogram: measures the distribution of values in a stream of data
 - Meter: measures the rate at which a set of events occur
 - Timer: measures a histogram of the duration of a type of event and a meter of the rate of its occurance
-
-### Gauge
-
-A `Gauge` is a measurement of a value at a certain time. A good example would be monitoring the number of jobs in a
-queue:
-```java
-@Gauge(name = "queue_length_gauge")
-private int getQueueLength() {
-    return queue.length();
-}
-```
 
 ### Counter
 
@@ -145,79 +133,41 @@ applications.
 ## Metric Registries
 
 Metric registries are used for grouping metrics. All metrics from annotated methods or fields are stored in a generic
-registry called `defaultRegistry`. Generic registry name can be changed by specifying the configuration key
-`kumuluzee.metrics.generic-registry-name`.
+registry called `application`.
 
-To register a metric in a different registry, use the following code to create a registry:
+The `base` registry contains metrics, defined in the Microprofile Metrics specification.
+
+To register a metric in a different registry, use the following code to get the `application` registry:
 
 ```java
-private final MetricRegistry registry = KumuluzEEMetricRegistries.getOrCreate("my_custom_registry");
+@Inject
+private MetricRegistry injectedRegistry;
+
+private MetricRegistry registry = MetricRegistryProducer.getApplicationRegistry();
 ```
 
 And then create a new metric within the registry, for example:
 
 ```java
-private final Counter evictions = registry.counter(name(SessionStore.class, "cache-evictions"));
+private Counter evictions = registry.counter(MetricRegistry.name(SessionStore.class, "cache-evictions"));
 ```
-
-Usually, you can store all your metrics in a default registry. The only time you need to separate them is, when you want
-to enable and disable registries, that are being reported.
 
 ## Included monitoring tools
 
-### Web Application Monitoring
+### Base metrics
 
-The module also includes Web Application monitoring, which enables the instrumentation of all requests at a defined 
-endpoint. This includes counting the number of responses by status code and the time it took to process the request.
-You can enable Web Application monitoring on multiple endpoints by defining the following configuration keys:
-- `kumuluzee.metrics.web-instrumentation[x].name`: Name of the Web Application monitoring. All metrics, collected for
-defined web instrumentation, will have this value set for their name.
-- `kumuluzee.metrics.web-instrumentation[x].url-pattern`: All requests, matching this pattern will be instrumented.
-- `kumuluzee.metrics.web-instrumentation[x].registry-name`: Name of the registry, in which collected metrics will be
-stored. By default, metrics are stored in the generic registry.
-
-Here is an example of monitoring two different urls:
-
-```yaml
-kumuluzee:
-    metrics:
-        web-instrumentation:
-          - name: metrics-endpoint
-            url-pattern: /metrics/*
-            registry-name: customRegistry
-          - name: prometheus-endpoint
-            url-pattern: /prometheus/*
-```
-
-### JVM Monitoring
-
-Java Virtual Machine monitoring is enabled by default. To configure `JVM` monitoring, you can do so by specifying
-following configuration keys:
-- `kumuluzee.metrics.jvm.enabled`: Is JVM monitoring enabled. Default value is `true`.
-- `kumuluzee.metrics.jvm.registry-name`: Name of the registry, in which JVM metrics will be stored. By default, JVM
-metrics are stored in the registry named `jvm`.
-
-Example of the configuration:
-
-```yaml
-kumuluzee:
-    metrics:
-        jvm:
-          enabled: true
-          registry-name: myJvm
-```
-
-JVM monitoring can also be [enabled or disabled](#enable_disable_registries) through metrics endpoint by using query 
-parameters `enable` or `disable`.
+Base metrics are included in the `base` registry. They contain various metrics about the Java Virtual Machine like
+memory consumption and thread counts.
 
 ## Servlet
 
 The common module includes a servlet, that exposes all the metrics in a json format. The server is enabled by default
 and can be configured using following configuration keys:
 - `kumuluzee.metrics.servlet.enabled`: Is the servlet enabled. Default value is `true`.
-- `kumuluzee.metrics.servlet.mapping`: URL on which the metrics are exposed. Default value is `/metrics`.
+- `kumuluzee.metrics.servlet.mapping`: URL on which the metrics are exposed. Default value is `/metrics/*`.
 
-The servlet can only be accessed if the environment is set to `dev` or if the debug value is set to `true`. You can also enable or disable the servlet during runtime by changing the debug value in the etcd.
+The servlet can only be accessed if the environment is set to `dev` or if the debug value is set to `true`.
+You can also enable or disable the servlet during runtime by changing the debug value in the etcd.
 
 Example of the configuration:
 
@@ -229,73 +179,126 @@ kumuluzee:
           mapping: /my-servlet-metrics
 ```
 
-Example of the servlet output:
+### JSON metrics
+
+Servlet exposes the following endpoints, when the `Accept` header of the request is set to `application/json`:
+- GET /metrics - Returns all registered metrics
+- GET /metrics/{registry} - Returns metrics, registered in the specified scope
+- GET /metrics/{registry}/{metric_name} - Returns metric, that matches the metric name for the specified registry
+- OPTIONS /metrics - Returns all registered metrics' metadata
+- OPTIONS /metrics/{registry} - Returns metrics' metadata for the metrics, registered in the specified scope
+- OPTIONS /metrics/{registry}/{metric_name} - Returns metric's metadata, that matches the metric name for the specified registry
+
+Example of the servlet output on GET request on `/metrics`:
 ```json
 {
-  "service" : {
-    "timestamp" : "2017-07-13T16:12:07.309Z",
-    "environment" : "dev",
-    "name" : "metrics-sample",
-    "version" : "0.0.7",
-    "instance" : "a634850e-1787-4e6f-aa74-1e29ca587a38",
-    "availableRegistries" : [ "jvm", "default", "registry3" ]
-  },
-  "registries" : {
-    "jvm" : {
-      "version" : "3.1.3",
-      "gauges" : {
-        "GarbageCollector.PS-MarkSweep.count" : {
-          "value" : 1
+    "application": {
+        "com.example.beans.TestBean.countedMethod": 10,
+        "com.example.TestResource.countersTest": 1,
+        "com.example.TestResource.timedMethod": {
+            "count": 2,
+            "meanRate": 0.4659556063121205,
+            "oneMinRate": 0,
+            "fiveMinRate": 0,
+            "fifteenMinRate": 0,
+            "min": 2073520,
+            "max": 3837249,
+            "mean": 2948770.6402594047,
+            "stddev": 881839.6981422313,
+            "p50": 2073520,
+            "p75": 3837249,
+            "p95": 3837249,
+            "p98": 3837249,
+            "p99": 3837249,
+            "p999": 3837249
         }
-      }
     },
-    "default" : {
-      "version" : "3.1.3",
-      "gauges" : {
-        "com.kumuluz.ee.samples.kumuluzee_metrics.CustomerResource.customer_count_gauge" : {
-          "value" : 5
-        }
-      },
-      "meters" : {
-        "ServletMetricsFilter.metrics-endpoint.responseCodes.ok" : {
-          "count" : 2,
-          "m15_rate" : 0.002179735240776932,
-          "m1_rate" : 0.025690219862652606,
-          "m5_rate" : 0.006296838645263653,
-          "mean_rate" : 0.0015924774955522764,
-          "units" : "events/second"
-        }
-      }
+    "base": {
+        "memory.committedHeap": 307232768,
+        "thread.daemon.count": 12,
+        "gc.PS-MarkSweep.count": 1,
+        "classloader.totalLoadedClass.count": 4865,
+        "thread.count": 21,
+        "gc.PS-Scavenge.count": 3,
+        "classloader.totalUnloadedClass.count": 0,
+        "memory.maxHeap": 3713531904,
+        "gc.PS-Scavenge.time": 33,
+        "gc.PS-MarkSweep.time": 38,
+        "memory.usedHeap": 35772696,
+        "jvm.uptime": 7832
     }
-  }
 }
 ```
 
-The output includes service information under the `service` object. Service information includes a timestamp,
-environment, service name, a version, an instance ID and available registries. Available registries array lists all 
-defined registries, including the ones that are disabled and not shown under registries.
+Example of the servlet output on OPTIONS request on `/metrics`:
+```json
+{
+    "application": {
+        "com.example.TestResource.timedMethod": {
+            "unit": "nanoseconds",
+            "type": "counter",
+            "description": "Times invocations of countersTest()",
+            "displayName": "",
+            "tags": ""
+        },
+        "com.example.beans.TestBean.countedMethod": {
+            "unit": "none",
+            "type": "counter",
+            "description": "",
+            "displayName": "com.example.beans.TestBean.countedMethod",
+            "tags": ""
+        },
+        "com.example.TestResource.countersTest": {
+            "unit": "none",
+            "type": "counter",
+            "description": "",
+            "displayName": "",
+            "tags": ""
+        }
+    },
+    "base": {
+        "thread.count": {
+            "unit": "none",
+            "type": "counter",
+            "description": "Displays the current number of live threads including both daemon and non-daemon threads",
+            "displayName": "Thread Count",
+            "tags": ""
+        },
+        "memory.usedHeap": {
+            "unit": "bytes",
+            "type": "gauge",
+            "description": "Displays the amount of used heap memory in bytes.",
+            "displayName": "Used Heap Memory",
+            "tags": ""
+        },
+        "jvm.uptime": {
+            "unit": "milliseconds",
+            "type": "gauge",
+            "description": "Displays the start time of the Java virtual machine in milliseconds. This attribute displays the approximate time when the Java virtual machine started.",
+            "displayName": "JVM Uptime",
+            "tags": ""
+        }
+    }
+}
+```
 
-The second object is contains registries with their underlying metric types. Each type contains metrics, registered
-within registry.
+### Prometheus metrics
 
-### Query Parameters
+Servlet exposes the following endpoints, when the `Accept` header of the request is set to anything else but `application/json`:
+- GET /metrics - Returns all registered metrics in Prometheus format
+- GET /metrics/{registry} - Returns metrics, registered in the specified scope in Prometheus format
+- GET /metrics/{registry}/{metric_name} - Returns metric, that matches the metric name for the specified registry
+  in Prometheus format
 
-Servlet endpoint support the following functions using GET parameters:
+Prometheus has to be configured to collect the exported metrics. Example static Prometheus job configuration for 3
+services:
 
-#### Filter shown registries
-
-To manipulate the servlet json output, use the `id` parameter. 
-For example, if you only want to show the `my_custom_registry` registry, you would use the `id` parameter like so:
-`/metrics?id=my_custom_registry`. 
-You can also filter two or more registries by adding multiple ids: `/metrics?id=registry_1&id=registry_2`. 
-
-#### <a name="enable_disable_registries"></a> Enable/Disable registries
-
-You can also enable or disable reporting of any registry by adding the `enable` and `disable` parameter respectively:
- - disable example: `/metrics?disable=my_registry`
- - enable example: `/metrics?enable=my_registry`
-
-The registries, enabled and disabled through servlet endpoint are also enabled or disabled on all configured reporters.
+```yaml
+- job_name: 'kumuluzee-metrics'
+  metrics_path: /metrics
+  static_configs:
+    - targets: ['localhost:8080', 'localhost:8081', 'localhost:8082']
+```
 
 ## Configuration
 
@@ -320,103 +323,15 @@ kumuluzee:
   env:
     name: test
   metrics:
-    generic-registry-name: default
-    jvm:
-      enabled: true
-      registry-name: jvm
     servlet:
       enabled: true
       mapping: /metrics
-    web-instrumentation:
-      - name: metrics-endpoint
-        url-pattern: /metrics/*
-        registry-name: default
-      - name: prometheus-endpoint
-        url-pattern: /prometheus/*
 
 ```
 
 ## Reporters
 
-Reporters for Graphite and Logstash can be enabled, as well as servlet, which exposes metrics in Prometheus format.
-
-### Prometheus
-
-To enable servlet, which exposes metrics in the Prometheus format, add the following dependency:
-
-```xml
-<dependency>
-    <groupId>com.kumuluz.ee.metrics</groupId>
-    <artifactId>kumuluzee-metrics-prometheus</artifactId>
-    <version>${kumuluzee-metrics.version}</version>
-</dependency>
-```
-
-The servlet can be configured using the following configuration key:
-- `kumuluzee.metrics.prometheus.mapping`: URL on which the metrics in Prometheus format are exposed. Default value is
-`/prometheus`.
-
-Example of the configuration:
-
-```yaml
-kumuluzee:
-    metrics:
-        prometheus:
-          mapping: /prometheus
-```
-
-Prometheus has to be configured to collect the exported metrics. Example static Prometheus job configuration for 3
-services:
-
-```yaml
-- job_name: 'kumuluzee-metrics'
-  metrics_path: /prometheus
-  static_configs:
-    - targets: ['localhost:8080', 'localhost:8081', 'localhost:8082']
-```
-
-Metrics are exported with their name, prefixed by `KumuluzEE_`. All special characters except for `_` and `:` are
-converted to `_`. Service information is reported through the metric labels.
-Here is an example of the metric:
-`KumuluzEE_com_kumuluz_ee_samples_kumuluzee_metrics_CustomerResource_customer_counter{environment="dev",serviceName="metrics-sample",serviceVersion="0.0.7",instanceId="instance1",} 5.0`
-
-### Graphite
-
-To enable Graphite reporter, add the following dependency:
-
-```xml
-<dependency>
-    <groupId>com.kumuluz.ee.metrics</groupId>
-    <artifactId>kumuluzee-metrics-graphite</artifactId>
-    <version>${kumuluzee-metrics.version}</version>
-</dependency>
-```
-
-The Graphite reporter is configured with the following configuration keys:
-- `kumuluzee.metrics.graphite.address`: Address of the Graphite server. Default value is `127.0.0.1`.
-- `kumuluzee.metrics.graphite.port`: Port on which the Graphite server listens. Default value is `2003` if pickle
-parameter is set to `false`, otherwise `2004`.
-- `kumuluzee.metrics.graphite.period-s`: Period in seconds, on which metrics are reported to Graphite. Default value is
-`60`.
-- `kumuluzee.metrics.graphite.pickle`: Use
-[pickle protocol](http://graphite.readthedocs.io/en/latest/feeding-carbon.html#the-pickle-protocol). Default value is
-`true`.
-
-Example of the configuration:
-
-```yaml
-kumuluzee:
-    metrics:
-        graphite:
-            address: 192.168.0.1
-            #port: 2003
-            periods: 5
-            pickle: true
-```
-
-The naming scheme for this measuring tools is `KumuluzEE`, followed by the environment, service name, version, instance
-ID and the metric name, all dot separated. Here is an example of a metric's name:
-`KumuluzEE.dev.metrics-sample.0_0_7.instance1.MemoryUsage`.
+Reporters for Logs and Logstash can be enabled.
 
 ### Logs
 

@@ -18,37 +18,29 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
 */
-package com.kumuluz.ee.metrics;
-
-import com.kumuluz.ee.common.Extension;
-import com.kumuluz.ee.common.config.EeConfig;
-import com.kumuluz.ee.common.dependencies.EeComponentDependency;
-import com.kumuluz.ee.common.dependencies.EeComponentType;
-import com.kumuluz.ee.common.dependencies.EeExtensionDef;
-import com.kumuluz.ee.common.dependencies.EeExtensionGroup;
-import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
-
-import java.util.logging.Logger;
+package com.kumuluz.ee.metrics.prometheus;
 
 /**
- * KumuluzEE framework extension for Metrics.
+ * Prometheus tag.
  *
  * @author Urban Malc
  * @author Aljaž Blažej
  */
-@EeExtensionDef(name = "MetricsCommons", group = EeExtensionGroup.METRICS)
-@EeComponentDependency(EeComponentType.CDI)
-public class MetricsExtension implements Extension {
+public class Tag {
 
-    private static final Logger log = Logger.getLogger(MetricsExtension.class.getName());
+    private String key;
+    private String value;
 
-    @Override
-    public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
-
-        log.info("Initialising Metrics common module.");
+    public Tag(String key, String value) {
+        this.key = key.trim();
+        this.value = value.trim();
     }
 
-    @Override
-    public void load() {
+    public String getKey() {
+        return key;
+    }
+
+    public String getValue() {
+        return value;
     }
 }

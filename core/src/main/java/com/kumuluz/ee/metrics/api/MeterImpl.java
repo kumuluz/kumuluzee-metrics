@@ -18,37 +18,60 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
 */
-package com.kumuluz.ee.metrics;
+package com.kumuluz.ee.metrics.api;
 
-import com.kumuluz.ee.common.Extension;
-import com.kumuluz.ee.common.config.EeConfig;
-import com.kumuluz.ee.common.dependencies.EeComponentDependency;
-import com.kumuluz.ee.common.dependencies.EeComponentType;
-import com.kumuluz.ee.common.dependencies.EeExtensionDef;
-import com.kumuluz.ee.common.dependencies.EeExtensionGroup;
-import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
-
-import java.util.logging.Logger;
+import org.eclipse.microprofile.metrics.Meter;
 
 /**
- * KumuluzEE framework extension for Metrics.
+ * Microprofile Meter implementation.
  *
  * @author Urban Malc
  * @author Aljaž Blažej
  */
-@EeExtensionDef(name = "MetricsCommons", group = EeExtensionGroup.METRICS)
-@EeComponentDependency(EeComponentType.CDI)
-public class MetricsExtension implements Extension {
+public class MeterImpl implements Meter {
 
-    private static final Logger log = Logger.getLogger(MetricsExtension.class.getName());
+    private com.codahale.metrics.Meter meter;
 
-    @Override
-    public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
+    public MeterImpl() {
+        this.meter = new com.codahale.metrics.Meter();
+    }
 
-        log.info("Initialising Metrics common module.");
+    public MeterImpl(com.codahale.metrics.Meter meter) {
+        this.meter = meter;
     }
 
     @Override
-    public void load() {
+    public void mark() {
+        this.meter.mark();
+    }
+
+    @Override
+    public void mark(long l) {
+        this.meter.mark(l);
+    }
+
+    @Override
+    public long getCount() {
+        return this.meter.getCount();
+    }
+
+    @Override
+    public double getFifteenMinuteRate() {
+        return this.meter.getFifteenMinuteRate();
+    }
+
+    @Override
+    public double getFiveMinuteRate() {
+        return this.meter.getFiveMinuteRate();
+    }
+
+    @Override
+    public double getMeanRate() {
+        return this.meter.getMeanRate();
+    }
+
+    @Override
+    public double getOneMinuteRate() {
+        return this.meter.getOneMinuteRate();
     }
 }

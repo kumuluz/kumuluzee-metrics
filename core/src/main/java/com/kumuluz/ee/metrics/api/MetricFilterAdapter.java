@@ -18,37 +18,27 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
 */
-package com.kumuluz.ee.metrics;
+package com.kumuluz.ee.metrics.api;
 
-import com.kumuluz.ee.common.Extension;
-import com.kumuluz.ee.common.config.EeConfig;
-import com.kumuluz.ee.common.dependencies.EeComponentDependency;
-import com.kumuluz.ee.common.dependencies.EeComponentType;
-import com.kumuluz.ee.common.dependencies.EeExtensionDef;
-import com.kumuluz.ee.common.dependencies.EeExtensionGroup;
-import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
-
-import java.util.logging.Logger;
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricFilter;
 
 /**
- * KumuluzEE framework extension for Metrics.
+ * Adapter from Microprofile MetricFilter to Dropwizard MetricFilter.
  *
  * @author Urban Malc
  * @author Aljaž Blažej
  */
-@EeExtensionDef(name = "MetricsCommons", group = EeExtensionGroup.METRICS)
-@EeComponentDependency(EeComponentType.CDI)
-public class MetricsExtension implements Extension {
+public class MetricFilterAdapter implements MetricFilter {
 
-    private static final Logger log = Logger.getLogger(MetricsExtension.class.getName());
+    private org.eclipse.microprofile.metrics.MetricFilter metricFilter;
 
-    @Override
-    public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
-
-        log.info("Initialising Metrics common module.");
+    public MetricFilterAdapter(org.eclipse.microprofile.metrics.MetricFilter metricFilter) {
+        this.metricFilter = metricFilter;
     }
 
     @Override
-    public void load() {
+    public boolean matches(String s, Metric metric) {
+        return this.metricFilter.matches(s, ((MetricAdapter)metric).getMetric());
     }
 }
