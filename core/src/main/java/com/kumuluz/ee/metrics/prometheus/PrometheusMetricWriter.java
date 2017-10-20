@@ -49,9 +49,11 @@ public class PrometheusMetricWriter {
     }
 
     public void write(Map<String, MetricRegistry> metricRegistries) throws IOException {
+        StringBuilder builder = new StringBuilder();
         for(Map.Entry<String, MetricRegistry> entry : metricRegistries.entrySet()) {
-            write(entry.getKey(), entry.getValue());
+            writeMetricsAsPrometheus(builder, entry.getKey(), entry.getValue());
         }
+        serialize(builder);
     }
 
     public void write(String registryName, MetricRegistry registry) throws IOException {
