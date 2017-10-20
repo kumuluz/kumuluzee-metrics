@@ -22,6 +22,7 @@ package com.kumuluz.ee.metrics;
 
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 
+import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
@@ -29,10 +30,13 @@ import javax.enterprise.event.Observes;
 /**
  * Initializes Logstash reporter.
  *
- * @author Urban Malc, Aljaž Blažej
+ * @author Urban Malc
+ * @author Aljaž Blažej
  */
 @ApplicationScoped
 public class LogstashInitiator {
+
+    private KumuluzEELogstashReporter logstashReporter;
 
     private void initialiseBean(@Observes @Initialized(ApplicationScoped.class) Object init) {
 
@@ -48,8 +52,13 @@ public class LogstashInitiator {
         int maxRetryDelay = configurationUtil.getInteger("kumuluzee.metrics.logstash.max-retry-delay-ms")
                 .orElse(900000);
 
-        KumuluzEELogstashReporter logstashReporter = new KumuluzEELogstashReporter(address, port, periodSeconds,
+        logstashReporter = new KumuluzEELogstashReporter(address, port, periodSeconds,
                 startRetryDelay, maxRetryDelay);
         logstashReporter.start();
+    }
+
+    @PreDestroy
+    private void stopReporter() {
+        logstashReporter.stop();
     }
 }

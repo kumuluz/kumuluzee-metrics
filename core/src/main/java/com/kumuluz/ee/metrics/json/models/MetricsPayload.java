@@ -18,37 +18,33 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
 */
-package com.kumuluz.ee.metrics;
+package com.kumuluz.ee.metrics.json.models;
 
-import com.kumuluz.ee.common.Extension;
-import com.kumuluz.ee.common.config.EeConfig;
-import com.kumuluz.ee.common.dependencies.EeComponentDependency;
-import com.kumuluz.ee.common.dependencies.EeComponentType;
-import com.kumuluz.ee.common.dependencies.EeExtensionDef;
-import com.kumuluz.ee.common.dependencies.EeExtensionGroup;
-import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 
-import java.util.logging.Logger;
+import java.util.Map;
 
 /**
- * KumuluzEE framework extension for Metrics.
+ * Metrics payload, used by various reporters. Contains service information and metric registries.
  *
  * @author Urban Malc
  * @author Aljaž Blažej
  */
-@EeExtensionDef(name = "MetricsCommons", group = EeExtensionGroup.METRICS)
-@EeComponentDependency(EeComponentType.CDI)
-public class MetricsExtension implements Extension {
+public class MetricsPayload {
 
-    private static final Logger log = Logger.getLogger(MetricsExtension.class.getName());
+    private Service service;
+    private Map<String, MetricRegistry> registries;
 
-    @Override
-    public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
-
-        log.info("Initialising Metrics common module.");
+    public MetricsPayload(Map<String, MetricRegistry> registries) {
+        this.service = new Service();
+        this.registries = registries;
     }
 
-    @Override
-    public void load() {
+    public Service getService() {
+        return service;
+    }
+
+    public Map<String, MetricRegistry> getRegistries() {
+        return registries;
     }
 }

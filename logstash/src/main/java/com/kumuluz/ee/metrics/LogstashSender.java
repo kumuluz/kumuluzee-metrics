@@ -20,28 +20,26 @@
 */
 package com.kumuluz.ee.metrics;
 
-import com.codahale.metrics.MetricFilter;
-import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kumuluz.ee.metrics.json.ServletExportModule;
-import com.kumuluz.ee.metrics.json.models.ServletExport;
-import com.kumuluz.ee.metrics.utils.EnabledRegistries;
-import com.kumuluz.ee.metrics.utils.KumuluzEEMetricRegistries;
+import com.kumuluz.ee.metrics.json.MetricsModule;
+import com.kumuluz.ee.metrics.json.models.MetricsPayload;
+import com.kumuluz.ee.metrics.producers.MetricRegistryProducer;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
  * Runnable, which sends metrics to Logstash TCP port.
  *
- * @author Urban Malc, Aljaž Blažej
+ * @author Urban Malc
+ * @author Aljaž Blažej
  */
 public class LogstashSender implements Runnable {
 
@@ -49,7 +47,6 @@ public class LogstashSender implements Runnable {
 
     private String address;
     private int port;
-    private EnabledRegistries enabledRegistries;
     private ObjectMapper mapper;
 
     private Socket socket;
@@ -63,14 +60,12 @@ public class LogstashSender implements Runnable {
         this.address = address;
         this.port = port;
         this.socket = null;
-        this.enabledRegistries = EnabledRegistries.getInstance();
         this.startRetryDelay = this.currentRetryDelay = startRetryDelay;
         this.maxRetryDelay = maxRetryDelay;
 
         this.mapper = (new ObjectMapper(
                 new JsonFactory().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)))
-                .registerModule(new ServletExportModule(TimeUnit.SECONDS, TimeUnit.SECONDS, false,
-                        MetricFilter.ALL));
+                .registerModule(new MetricsModule(false));
     }
 
     @Override
@@ -84,12 +79,11 @@ public class LogstashSender implements Runnable {
                 }
 
                 Map<String, MetricRegistry> registries = new HashMap<>();
-                for (String registryName : enabledRegistries.getEnabledRegistries()) {
-                    registries.put(registryName, KumuluzEEMetricRegistries.getOrCreate(registryName));
-                }
-                ServletExport servletExport = new ServletExport(KumuluzEEMetricRegistries.names(), registries);
+                registries.put("application", MetricRegistryProducer.getApplicationRegistry());
+                registries.put("base", MetricRegistryProducer.getBaseRegistry());
+                registries.put("vendor", MetricRegistryProducer.getVendorRegistry());
 
-                this.mapper.writeValue(outputStream, servletExport);
+                this.mapper.writeValue(outputStream, new MetricsPayload(registries));
                 outputStream.write("\n".getBytes("UTF-8"));
                 outputStream.flush();
 

@@ -18,37 +18,31 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
 */
-package com.kumuluz.ee.metrics;
+package com.kumuluz.ee.metrics.api;
 
-import com.kumuluz.ee.common.Extension;
-import com.kumuluz.ee.common.config.EeConfig;
-import com.kumuluz.ee.common.dependencies.EeComponentDependency;
-import com.kumuluz.ee.common.dependencies.EeComponentType;
-import com.kumuluz.ee.common.dependencies.EeExtensionDef;
-import com.kumuluz.ee.common.dependencies.EeExtensionGroup;
-import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
-
-import java.util.logging.Logger;
+import org.eclipse.microprofile.metrics.Timer;
 
 /**
- * KumuluzEE framework extension for Metrics.
+ * Microprofile Context implementation.
  *
  * @author Urban Malc
  * @author Aljaž Blažej
  */
-@EeExtensionDef(name = "MetricsCommons", group = EeExtensionGroup.METRICS)
-@EeComponentDependency(EeComponentType.CDI)
-public class MetricsExtension implements Extension {
+public class ContextImpl implements Timer.Context {
 
-    private static final Logger log = Logger.getLogger(MetricsExtension.class.getName());
+    private com.codahale.metrics.Timer.Context context;
 
-    @Override
-    public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
-
-        log.info("Initialising Metrics common module.");
+    public ContextImpl(com.codahale.metrics.Timer.Context context) {
+        this.context = context;
     }
 
     @Override
-    public void load() {
+    public long stop() {
+        return context.stop();
+    }
+
+    @Override
+    public void close() {
+        context.close();
     }
 }

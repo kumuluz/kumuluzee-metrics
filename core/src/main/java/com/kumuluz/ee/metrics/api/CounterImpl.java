@@ -18,37 +18,56 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
 */
-package com.kumuluz.ee.metrics;
+package com.kumuluz.ee.metrics.api;
 
-import com.kumuluz.ee.common.Extension;
-import com.kumuluz.ee.common.config.EeConfig;
-import com.kumuluz.ee.common.dependencies.EeComponentDependency;
-import com.kumuluz.ee.common.dependencies.EeComponentType;
-import com.kumuluz.ee.common.dependencies.EeExtensionDef;
-import com.kumuluz.ee.common.dependencies.EeExtensionGroup;
-import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
-
-import java.util.logging.Logger;
+import com.codahale.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Counter;
 
 /**
- * KumuluzEE framework extension for Metrics.
+ * Microprofile Counter implementation.
  *
  * @author Urban Malc
  * @author Aljaž Blažej
  */
-@EeExtensionDef(name = "MetricsCommons", group = EeExtensionGroup.METRICS)
-@EeComponentDependency(EeComponentType.CDI)
-public class MetricsExtension implements Extension {
+public class CounterImpl implements Counter {
 
-    private static final Logger log = Logger.getLogger(MetricsExtension.class.getName());
+    private com.codahale.metrics.Counter counter;
 
-    @Override
-    public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
+    public CounterImpl() {
+        this.counter = new com.codahale.metrics.Counter();
+    }
 
-        log.info("Initialising Metrics common module.");
+    public CounterImpl(com.codahale.metrics.Counter counter) {
+        this.counter = counter;
+    }
+
+    public CounterImpl(Gauge gauge) {
+        this.counter = new com.codahale.metrics.Counter();
+        this.counter.inc(((Number)gauge.getValue()).longValue());
     }
 
     @Override
-    public void load() {
+    public void inc() {
+        this.counter.inc();
+    }
+
+    @Override
+    public void inc(long l) {
+        this.counter.inc(l);
+    }
+
+    @Override
+    public void dec() {
+        this.counter.dec();
+    }
+
+    @Override
+    public void dec(long l) {
+        this.counter.dec(l);
+    }
+
+    @Override
+    public long getCount() {
+        return this.counter.getCount();
     }
 }

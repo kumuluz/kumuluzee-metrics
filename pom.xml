@@ -10,9 +10,7 @@
     <version>1.0.0-SNAPSHOT</version>
     <modules>
         <module>core</module>
-        <module>graphite</module>
         <module>logstash</module>
-        <module>prometheus</module>
         <module>logs</module>
     </modules>
 
@@ -33,8 +31,8 @@
         <kumuluzee.version>2.4.1</kumuluzee.version>
 
         <dropwizard-metrics.version>3.2.4</dropwizard-metrics.version>
-        <cdi-metrics.version>1.4.0</cdi-metrics.version>
-        <prometheus-client.version>0.0.26</prometheus-client.version>
+        <jackson.version>2.8.10</jackson.version>
+        <microprofile-metrics.version>1.0</microprofile-metrics.version>
 
         <maven-compiler-plugin.version>3.6.1</maven-compiler-plugin.version>
         <nexus.staging.plugin.version>1.6.8</nexus.staging.plugin.version>

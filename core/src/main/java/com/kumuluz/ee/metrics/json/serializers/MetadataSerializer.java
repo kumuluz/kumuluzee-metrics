@@ -18,37 +18,35 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
 */
-package com.kumuluz.ee.metrics;
+package com.kumuluz.ee.metrics.json.serializers;
 
-import com.kumuluz.ee.common.Extension;
-import com.kumuluz.ee.common.config.EeConfig;
-import com.kumuluz.ee.common.dependencies.EeComponentDependency;
-import com.kumuluz.ee.common.dependencies.EeComponentType;
-import com.kumuluz.ee.common.dependencies.EeExtensionDef;
-import com.kumuluz.ee.common.dependencies.EeExtensionGroup;
-import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import org.eclipse.microprofile.metrics.Metadata;
 
-import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
- * KumuluzEE framework extension for Metrics.
+ * Serializer for Microprofile Metadata.
  *
  * @author Urban Malc
  * @author Aljaž Blažej
  */
-@EeExtensionDef(name = "MetricsCommons", group = EeExtensionGroup.METRICS)
-@EeComponentDependency(EeComponentType.CDI)
-public class MetricsExtension implements Extension {
+public class MetadataSerializer extends StdSerializer<Metadata> {
 
-    private static final Logger log = Logger.getLogger(MetricsExtension.class.getName());
-
-    @Override
-    public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
-
-        log.info("Initialising Metrics common module.");
+    public MetadataSerializer() {
+        super(Metadata.class);
     }
 
     @Override
-    public void load() {
+    public void serialize(Metadata metadata, JsonGenerator json, SerializerProvider provider) throws IOException {
+        json.writeStartObject();
+        json.writeStringField("unit", metadata.getUnit());
+        json.writeStringField("type", metadata.getType());
+        json.writeStringField("description", metadata.getDescription());
+        json.writeStringField("displayName", metadata.getDisplayName());
+        json.writeStringField("tags", metadata.getTagsAsString());
+        json.writeEndObject();
     }
 }

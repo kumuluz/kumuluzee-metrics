@@ -20,60 +20,47 @@
 */
 package com.kumuluz.ee.metrics.logs;
 
-import com.codahale.metrics.MetricFilter;
-import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kumuluz.ee.metrics.json.ServletExportModule;
-import com.kumuluz.ee.metrics.json.models.ServletExport;
-import com.kumuluz.ee.metrics.utils.EnabledRegistries;
-import com.kumuluz.ee.metrics.utils.KumuluzEEMetricRegistries;
+import com.kumuluz.ee.metrics.json.MetricsModule;
+import com.kumuluz.ee.metrics.json.models.MetricsPayload;
+import com.kumuluz.ee.metrics.producers.MetricRegistryProducer;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Runnable, which logs metrics.
  *
- * @author Aljaž Blažej, Urban Malc
+ * @author Aljaž Blažej
+ * @author Urban Malc
  */
 public class LogsSender implements Runnable {
 
-    private static final Logger LOG = Logger.getLogger(LogsSender.class.getName());
-    private static Level LEVEL;
+    private static final Logger log = Logger.getLogger(LogsSender.class.getName());
+    private Level level;
 
     private ObjectMapper mapper;
-    private EnabledRegistries enabledRegistries;
 
     public LogsSender(String level) {
-        this.enabledRegistries = EnabledRegistries.getInstance();
-        this.mapper = (new ObjectMapper()).registerModule(new ServletExportModule(TimeUnit.SECONDS, TimeUnit.SECONDS,
-                true, MetricFilter.ALL));
+        this.mapper = (new ObjectMapper()).registerModule(new MetricsModule(false));
 
-        this.LEVEL = Level.parse(level.toUpperCase());
+        this.level = Level.parse(level.toUpperCase());
     }
 
     @Override
     public void run() {
         try {
             Map<String, MetricRegistry> registries = new HashMap<>();
+            registries.put("application", MetricRegistryProducer.getApplicationRegistry());
+            registries.put("base", MetricRegistryProducer.getBaseRegistry());
+            registries.put("vendor", MetricRegistryProducer.getVendorRegistry());
 
-            Set<String> registriesToSend = new HashSet<>(KumuluzEEMetricRegistries.names());
-            registriesToSend.retainAll(enabledRegistries.getEnabledRegistries());
-
-            for (String registryName : registriesToSend) {
-                registries.put(registryName, KumuluzEEMetricRegistries.getOrCreate(registryName));
-            }
-
-            ServletExport servletExport = new ServletExport(KumuluzEEMetricRegistries.names(), registries);
-
-            LOG.log(LEVEL, this.mapper.writer().writeValueAsString(servletExport));
+            log.log(level, this.mapper.writer().writeValueAsString(new MetricsPayload(registries)));
         } catch (Exception exception) {
-            LOG.log(Level.SEVERE, "An error occurred when trying to log metrics.", exception);
+            log.log(Level.SEVERE, "An error occurred when trying to log metrics.", exception);
         }
     }
 }

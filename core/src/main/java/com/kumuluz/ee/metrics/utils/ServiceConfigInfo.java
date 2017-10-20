@@ -26,7 +26,8 @@ import com.kumuluz.ee.common.runtime.EeRuntime;
 /**
  * Configuration class, used for exporting metrics.
  *
- * @author Urban Malc, Aljaž Blažej
+ * @author Urban Malc
+ * @author Aljaž Blažej
  */
 public class ServiceConfigInfo {
 
