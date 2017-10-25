@@ -20,9 +20,11 @@
 */
 package com.kumuluz.ee.metrics.utils;
 
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.*;
 import org.eclipse.microprofile.metrics.annotation.*;
+import org.eclipse.microprofile.metrics.annotation.Gauge;
+import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.Metric;
 
 import javax.enterprise.inject.spi.InjectionPoint;
 import java.lang.reflect.AnnotatedElement;
@@ -37,7 +39,7 @@ import java.lang.reflect.Member;
  */
 public class AnnotationMetadata {
 
-    public static Metadata buildMetadata(InjectionPoint injectionPoint, MetricType metricType) {
+    public static Metadata buildProducerMetadata(InjectionPoint injectionPoint, MetricType metricType) {
         Metric annotation = injectionPoint.getAnnotated().getAnnotation(Metric.class);
         String name = (annotation == null || annotation.name().isEmpty()) ? memberName(injectionPoint.getMember()) :
                 annotation.name();
@@ -48,8 +50,31 @@ public class AnnotationMetadata {
         Metadata metadata = new Metadata(namePrefix + name, metricType);
         metadata.setDescription("");
 
-        if(annotation != null) {
-            for(String tag : annotation.tags()) {
+        if (annotation != null) {
+            for (String tag : annotation.tags()) {
+                metadata.addTag(tag);
+            }
+            metadata.setDisplayName(annotation.displayName());
+            metadata.setDescription(annotation.description());
+            metadata.setUnit(annotation.unit());
+        }
+
+        return metadata;
+    }
+
+    public static <E extends Member & AnnotatedElement> Metadata buildMetricMetadata(E element) {
+        Metric annotation = element.getAnnotation(Metric.class);
+        String name = (annotation == null || annotation.name().isEmpty()) ? memberName(element) :
+                annotation.name();
+
+        String namePrefix = (annotation == null || !annotation.absolute()) ? element.getDeclaringClass().getName()
+                + "." : "";
+
+        Metadata metadata = new Metadata(namePrefix + name, getMetricType(element));
+        metadata.setDescription("");
+
+        if (annotation != null) {
+            for (String tag : annotation.tags()) {
                 metadata.addTag(tag);
             }
             metadata.setDisplayName(annotation.displayName());
@@ -70,8 +95,8 @@ public class AnnotationMetadata {
         Metadata metadata = new Metadata(namePrefix + name, MetricType.COUNTER);
         metadata.setDescription("");
 
-        if(annotation != null) {
-            for(String tag : annotation.tags()) {
+        if (annotation != null) {
+            for (String tag : annotation.tags()) {
                 metadata.addTag(tag);
             }
             metadata.setDisplayName(annotation.displayName());
@@ -92,8 +117,8 @@ public class AnnotationMetadata {
         Metadata metadata = new Metadata(namePrefix + name, MetricType.COUNTER);
         metadata.setDescription("");
 
-        if(annotation != null) {
-            for(String tag : annotation.tags()) {
+        if (annotation != null) {
+            for (String tag : annotation.tags()) {
                 metadata.addTag(tag);
             }
             metadata.setDisplayName(annotation.displayName());
@@ -114,8 +139,8 @@ public class AnnotationMetadata {
         Metadata metadata = new Metadata(namePrefix + name, MetricType.COUNTER);
         metadata.setDescription("");
 
-        if(annotation != null) {
-            for(String tag : annotation.tags()) {
+        if (annotation != null) {
+            for (String tag : annotation.tags()) {
                 metadata.addTag(tag);
             }
             metadata.setDisplayName(annotation.displayName());
@@ -136,8 +161,8 @@ public class AnnotationMetadata {
         Metadata metadata = new Metadata(namePrefix + name, MetricType.COUNTER);
         metadata.setDescription("");
 
-        if(annotation != null) {
-            for(String tag : annotation.tags()) {
+        if (annotation != null) {
+            for (String tag : annotation.tags()) {
                 metadata.addTag(tag);
             }
             metadata.setDisplayName(annotation.displayName());
@@ -153,5 +178,21 @@ public class AnnotationMetadata {
             return member.getDeclaringClass().getSimpleName();
         else
             return member.getName();
+    }
+
+    private static <E extends Member & AnnotatedElement> MetricType getMetricType(E element) {
+        if (element instanceof Counter) {
+            return MetricType.COUNTER;
+        } else if (element instanceof Histogram) {
+            return MetricType.HISTOGRAM;
+        } else if (element instanceof org.eclipse.microprofile.metrics.Gauge) {
+            return MetricType.GAUGE;
+        } else if (element instanceof Timer) {
+            return MetricType.TIMER;
+        } else if (element instanceof Meter) {
+            return MetricType.METERED;
+        }
+
+        return MetricType.INVALID;
     }
 }

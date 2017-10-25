@@ -42,21 +42,25 @@ public class MetricProducer {
 
     @Produces
     public Meter produceMeter(InjectionPoint injectionPoint) {
-        return applicationRegistry.meter(AnnotationMetadata.buildMetadata(injectionPoint, MetricType.METERED));
+        return applicationRegistry.meter(AnnotationMetadata.buildProducerMetadata(injectionPoint,
+                MetricType.METERED));
     }
 
     @Produces
     public Timer produceTimer(InjectionPoint injectionPoint) {
-        return applicationRegistry.timer(AnnotationMetadata.buildMetadata(injectionPoint, MetricType.TIMER));
+        return applicationRegistry.timer(AnnotationMetadata.buildProducerMetadata(injectionPoint,
+                MetricType.TIMER));
     }
 
     @Produces
     public Counter produceCounter(InjectionPoint injectionPoint) {
-        return applicationRegistry.counter(AnnotationMetadata.buildMetadata(injectionPoint, MetricType.COUNTER));
+        return applicationRegistry.counter(AnnotationMetadata.buildProducerMetadata(injectionPoint,
+                MetricType.COUNTER));
     }
 
     @Produces
     public Histogram produceHistogram(InjectionPoint injectionPoint) {
-        return applicationRegistry.histogram(AnnotationMetadata.buildMetadata(injectionPoint, MetricType.HISTOGRAM));
+        return applicationRegistry.histogram(AnnotationMetadata.buildProducerMetadata(injectionPoint,
+                MetricType.HISTOGRAM));
     }
 }
