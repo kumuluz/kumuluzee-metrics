@@ -83,6 +83,7 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
                 requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METADATA ||
                 requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METRIC)) {
             response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+            return;
         }
 
         if(requestInfo.getRequestType() != RequestInfo.RequestType.INVALID) {
