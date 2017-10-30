@@ -3,15 +3,21 @@
 
 > Metrics extension for the KumuluzEE microservice framework
 
-KumuluzEE Metrics is a metrics collecting extension for the KumuluzEE microservice framework. It provides support for collecting different system, application and user-defined metrics and exposing them as in different ways. Metrics can be exposed on a URL, as a JSON object or in Prometheus format. 
+KumuluzEE Metrics is a metrics collecting extension for the KumuluzEE microservice framework. It provides support for
+collecting different system, application and user-defined metrics and exposing them in different ways. Metrics can be
+exposed on a URL, as a JSON object or in Prometheus format. 
 
-KumuluzEE Metrics currently provides support Logs and Logstash reporters and a servlet, which exposes metrics in JSON or Prometheus format.
+KumuluzEE Metrics currently provides support Logs and Logstash reporters and a servlet, which exposes metrics in JSON or
+Prometheus format.
 
-KumuluzEE Metrics includes modules for automatic collection of JVM metrics. It supports easy definition and collection of application specific metrics, as described below. 
+KumuluzEE Metrics includes automatic collection of JVM metrics. It supports easy definition and collection
+of application specific metrics, as described below. 
 
-The implementation is based on Dropwizard metrics. More information about their implementation can be found on [github](https://github.com/dropwizard/metrics) or their [official page](http://metrics.dropwizard.io).
+The implementation is based on Dropwizard metrics. More information about their implementation can be found on
+[github](https://github.com/dropwizard/metrics) or their [official page](http://metrics.dropwizard.io).
 
-We are working on making KumuluzEE Metrics fully compliant with MicroProfile Metrics. This is a development version and may not be fully stable.
+We are working on making KumuluzEE Metrics fully compliant with MicroProfile Metrics. This is a development version and
+may not be fully stable.
 
 ## Usage
 
@@ -28,10 +34,22 @@ You can enable the metrics extension by adding the following dependency:
 
 There are several different measuring tools available: 
 
+- Gauge: measures a simple value
 - Counter: measures an integer, which can increase and decrease
 - Histogram: measures the distribution of values in a stream of data
 - Meter: measures the rate at which a set of events occur
 - Timer: measures a histogram of the duration of a type of event and a meter of the rate of its occurance
+
+### Gauge
+
+A `Gauge` is a measurement of a value at a certain time. A good example would be monitoring the number of jobs in a
+queue:
+```java
+@Gauge(name = "queue_length_gauge")
+private int getQueueLength() {
+    return queue.length();
+}
+```
 
 ### Counter
 
@@ -43,6 +61,10 @@ public void foo() {
     ...
 }
 ```
+
+By default, methods annotated with `@Counted` decrement the counter when the method returns, counting current
+invocations. If the `monotonic` annotation parameter in the `@Counted` annotation is set to true, counter increases
+monotonically, counting total invocations.
 
 A `Counter` can be programmatically updated, as shown in the following example:
 
@@ -82,7 +104,7 @@ public void handleRequest(Request request, Response response) {
 }
 ```
 
-If you want a little more control, you can inject the meter separately and then call the `mark()` method.
+If you want more control, you can inject the meter separately and then call the `mark()` method.
 
 ```java
 @Inject
@@ -125,19 +147,26 @@ public void longLasting() {
 }
 ```
 
-## Metric names
+## Metric names & metadata
 
-Each metric name is prepended with fully qualified class name, so they can be easily differentiated between classes and
-applications.
+Each metric name is prepended with the fully qualified class name, so they can be easily differentiated between classes
+and applications. To register a metric without the prepended class name, set the `absolute` parameter in `@Metric`
+annotation to `true`.
+
+Alongside metric's name, the following metadata is stored for each metric:
+- `displayName` - The display friendly name of the metric. If not set, the metric's name is used.
+- `description` - A human readable description. Default: `""`.
+- `unit` - Unit of the metric. Default: `MetricUnits.NONE`.
+- `tags` - Tags of the metric.
 
 ## Metric Registries
 
-Metric registries are used for grouping metrics. All metrics from annotated methods or fields are stored in a generic
+Metric registries are used for grouping metrics. All metrics from annotated methods and fields are stored in a generic
 registry called `application`.
 
 The `base` registry contains metrics, defined in the Microprofile Metrics specification.
 
-To register a metric in a different registry, use the following code to get the `application` registry:
+To register a metric in the `application` registry, use the following code:
 
 ```java
 @Inject
@@ -187,7 +216,8 @@ Servlet exposes the following endpoints, when the `Accept` header of the request
 - GET /metrics/{registry}/{metric_name} - Returns metric, that matches the metric name for the specified registry
 - OPTIONS /metrics - Returns all registered metrics' metadata
 - OPTIONS /metrics/{registry} - Returns metrics' metadata for the metrics, registered in the specified scope
-- OPTIONS /metrics/{registry}/{metric_name} - Returns metric's metadata, that matches the metric name for the specified registry
+- OPTIONS /metrics/{registry}/{metric_name} - Returns metric's metadata, that matches the metric name for the specified
+  registry
 
 Example of the servlet output on GET request on `/metrics`:
 ```json
@@ -284,7 +314,8 @@ Example of the servlet output on OPTIONS request on `/metrics`:
 
 ### Prometheus metrics
 
-Servlet exposes the following endpoints, when the `Accept` header of the request is set to anything else but `application/json`:
+Servlet exposes the following endpoints, when the `Accept` header of the request is set to anything else but
+`application/json`:
 - GET /metrics - Returns all registered metrics in Prometheus format
 - GET /metrics/{registry} - Returns metrics, registered in the specified scope in Prometheus format
 - GET /metrics/{registry}/{metric_name} - Returns metric, that matches the metric name for the specified registry
@@ -308,12 +339,6 @@ following information about the service should be defined with the common config
 - `kumuluzee.version`: Version of the service.
 - `kumuluzee.env.name`: Name of the environment in which service is deployed.
 
-The name of the default registry can be defined by specifying configuration key
-`kumuluzee.metrics.generic-registry-name`. Default value is `default`.
-
-Configuration options for JVM monitoring, metrics servlet and Web Instrumentation are described in their dedicated
-chapters.
-
 Example if the metrics configuration is shown below:
 
 ```yaml
@@ -335,7 +360,8 @@ Reporters for Logs and Logstash can be enabled.
 
 ### Logs
 
-The metrics can be reported to the available logging framework. To enable the Logs reporter, add the following dependency:
+The metrics can be reported to the available logging framework. To enable the Logs reporter, add the following
+dependency:
 
 ```xml
 <dependency>
@@ -346,19 +372,19 @@ The metrics can be reported to the available logging framework. To enable the Lo
 ```
 
 Logs reporter can be configured using the following configuration keys:
+- `kumuluzee.metrics.logs.enabled`: Is the Logs reporter enabled. Default value is `true`.
 - `kumuluzee.metrics.logs.period-s`: Period in seconds, on which metrics are logged. The default value is `60`.
 - `kumuluzee.metrics.logs.level`: Logging level. Default value is `FINE`.
 
 ```yaml
 kumuluzee:
     metrics:
-        logstash:
-            logs:
+        logs:
             period-s: 60
             level: INFO
 ```
 
-The metrics are logged in the same json format as in the servlet.
+The metrics are logged in the same json format as exposed by the servlet.
 
 ### Logstash
 
@@ -373,10 +399,11 @@ To enable Logstash reporter, add the following dependency:
 ```
 
 Logstash reporter can be configured using the following configuration keys:
+- `kumuluzee.metrics.logstash.enabled`: Is the Logstash reporter enabled. Default value is `true`.
 - `kumuluzee.metrics.logstash.address`: Address of the Logstash server. Default value is `127.0.0.1`.
 - `kumuluzee.metrics.logstash.port`: Port on which the Logstash server listens. Default value is `5000`.
 - `kumuluzee.metrics.logstash.period-s`: Period in seconds, on which metrics are reported to Logstash. Default value is
-`60`.
+  `60`.
 
 ```yaml
 kumuluzee:
