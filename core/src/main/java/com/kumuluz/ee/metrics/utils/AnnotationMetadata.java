@@ -27,9 +27,7 @@ import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
 import javax.enterprise.inject.spi.InjectionPoint;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Member;
+import java.lang.reflect.*;
 
 /**
  * Metadata Builders.
@@ -62,7 +60,7 @@ public class AnnotationMetadata {
         return metadata;
     }
 
-    public static <E extends Member & AnnotatedElement> Metadata buildMetricMetadata(E element) {
+    public static <E extends Member & AnnotatedElement> Metadata buildMetricMetadata(E element, Type t) {
         Metric annotation = element.getAnnotation(Metric.class);
         String name = (annotation == null || annotation.name().isEmpty()) ? memberName(element) :
                 annotation.name();
@@ -70,7 +68,10 @@ public class AnnotationMetadata {
         String namePrefix = (annotation == null || !annotation.absolute()) ? element.getDeclaringClass().getName()
                 + "." : "";
 
-        Metadata metadata = new Metadata(namePrefix + name, getMetricType(element));
+        if(t instanceof ParameterizedType) {
+            t = ((ParameterizedType) t).getRawType();
+        }
+        Metadata metadata = new Metadata(namePrefix + name, MetricType.from((Class)t));
         metadata.setDescription("");
 
         if (annotation != null) {

@@ -62,7 +62,7 @@ public class MetricsExtensionCDI implements Extension {
         if (ppf.getAnnotatedProducerField().getAnnotation(org.eclipse.microprofile.metrics.annotation.Metric.class)
                 != null) {
             Metadata metadata = AnnotationMetadata.buildMetricMetadata(ppf.getAnnotatedProducerField()
-                    .getJavaMember());
+                    .getJavaMember(), ppf.getAnnotatedProducerField().getBaseType());
             producerMembers.add(new ProducerMemberRegistration(ppf.getBean(), ppf.getAnnotatedProducerField(),
                     metadata));
         }
@@ -72,7 +72,7 @@ public class MetricsExtensionCDI implements Extension {
         if (ppm.getAnnotatedProducerMethod().getAnnotation(org.eclipse.microprofile.metrics.annotation.Metric.class)
                 != null) {
             Metadata metadata = AnnotationMetadata.buildMetricMetadata(ppm.getAnnotatedProducerMethod()
-                    .getJavaMember());
+                    .getJavaMember(), ppm.getAnnotatedProducerMethod().getBaseType());
             producerMembers.add(new ProducerMemberRegistration(ppm.getBean(), ppm.getAnnotatedProducerMethod(),
                     metadata));
         }
@@ -81,7 +81,7 @@ public class MetricsExtensionCDI implements Extension {
     private void registerMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
         for (ProducerMemberRegistration registration : producerMembers) {
             applicationRegistry.register(registration.getMetadata().getName(), getReference(manager,
-                    registration.getMember().getBaseType(), registration.getBean()));
+                    registration.getMember().getBaseType(), registration.getBean()), registration.getMetadata());
         }
     }
 
