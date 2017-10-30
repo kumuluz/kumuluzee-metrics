@@ -9,6 +9,7 @@
         <class>com.kumuluz.ee.metrics.interceptors.CountedInterceptor</class>
         <class>com.kumuluz.ee.metrics.interceptors.MeteredInterceptor</class>
         <class>com.kumuluz.ee.metrics.interceptors.TimedInterceptor</class>
+        <class>com.kumuluz.ee.metrics.interceptors.GaugeInterceptor</class>
     </interceptors>
 
 </beans>

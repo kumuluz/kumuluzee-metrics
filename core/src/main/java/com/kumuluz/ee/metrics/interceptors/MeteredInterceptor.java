@@ -46,7 +46,7 @@ import java.lang.reflect.Member;
 public class MeteredInterceptor {
 
     @Inject
-    MetricRegistry applicationRegistry;
+    private MetricRegistry applicationRegistry;
 
 
     @AroundConstruct

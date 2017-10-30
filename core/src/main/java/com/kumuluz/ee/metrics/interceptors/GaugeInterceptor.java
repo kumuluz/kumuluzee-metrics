@@ -20,53 +20,57 @@
 */
 package com.kumuluz.ee.metrics.interceptors;
 
+import com.kumuluz.ee.metrics.api.ForwardingGauge;
+import com.kumuluz.ee.metrics.interceptors.utils.GaugeBeanBinding;
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
+import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.Timer;
-import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import javax.annotation.Priority;
 import javax.inject.Inject;
 import javax.interceptor.AroundConstruct;
-import javax.interceptor.AroundInvoke;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 
 /**
- * Interceptor for Timed annotation.
+ * Interceptor for Gauge annotation.
+ *
+ * Processes beans, which include methods, annotated with Gauge.
  *
  * @author Urban Malc
  * @author Aljaž Blažej
  */
 @Interceptor
-@Timed
+@GaugeBeanBinding
 @Priority(Interceptor.Priority.LIBRARY_BEFORE)
-public class TimedInterceptor {
+public class GaugeInterceptor {
 
     @Inject
     private MetricRegistry applicationRegistry;
 
     @AroundConstruct
-    private Object timedConstructor(InvocationContext context) throws Exception {
-        return applyInterceptor(context, context.getConstructor());
-    }
+    private Object gaugeBeanConstructor(InvocationContext context) throws Exception {
+        Object target = context.proceed();
 
-    @AroundInvoke
-    private Object timedMethod(InvocationContext context) throws Exception {
-        return applyInterceptor(context, context.getMethod());
-    }
+        Class<?> type = context.getConstructor().getDeclaringClass();
 
-    private <E extends Member & AnnotatedElement> Object applyInterceptor(InvocationContext context, E member)
-            throws Exception {
-        Timer timer = applicationRegistry.timer(AnnotationMetadata.buildMetadataFromTimed(member));
-        Timer.Context timerContext = timer.time();
+        do {
+            for (Method method : type.getDeclaredMethods()) {
+                if(method.isAnnotationPresent(org.eclipse.microprofile.metrics.annotation.Gauge.class)) {
+                    Metadata metadata = AnnotationMetadata.buildMetadataFromGauge(method);
+                    Gauge gauge = applicationRegistry.getGauges().get(metadata.getName());
 
-        try {
-            return context.proceed();
-        } finally {
-            timerContext.stop();
-        }
+                    if (gauge == null) {
+                        applicationRegistry.register(metadata.getName(), new ForwardingGauge(method,
+                                context.getTarget()), metadata);
+                    }
+                }
+            }
+            type = type.getSuperclass();
+        } while (!Object.class.equals(type));
+
+        return target;
     }
 }

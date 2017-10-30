@@ -46,7 +46,7 @@ import java.lang.reflect.Member;
 public class CountedInterceptor {
 
     @Inject
-    MetricRegistry applicationRegistry;
+    private MetricRegistry applicationRegistry;
 
     @AroundConstruct
     private Object countedConstructor(InvocationContext context) throws Exception {
