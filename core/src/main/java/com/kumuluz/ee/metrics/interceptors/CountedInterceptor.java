@@ -67,7 +67,7 @@ public class CountedInterceptor {
             return context.proceed();
         } finally {
             Counted annotation = member.getAnnotation(Counted.class);
-            if(annotation != null && annotation.monotonic()) {
+            if(annotation != null && !annotation.monotonic()) {
                 counter.dec();
             }
         }
