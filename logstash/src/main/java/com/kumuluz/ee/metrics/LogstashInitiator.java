@@ -43,18 +43,21 @@ public class LogstashInitiator {
         ConfigurationUtil configurationUtil = ConfigurationUtil.getInstance();
 
         // start logstash reporter
-        String address = configurationUtil.get("kumuluzee.metrics.logstash.address").orElse("127.0.0.1");
-        int port = configurationUtil.getInteger("kumuluzee.metrics.logstash.port").orElse(5000);
-        long periodSeconds = configurationUtil.getInteger("kumuluzee.metrics.logstash.period-s").orElse(60);
+        boolean enabled = configurationUtil.getBoolean("kumuluzee.metrics.logstash.enabled").orElse(true);
+        if(enabled) {
+            String address = configurationUtil.get("kumuluzee.metrics.logstash.address").orElse("127.0.0.1");
+            int port = configurationUtil.getInteger("kumuluzee.metrics.logstash.port").orElse(5000);
+            long periodSeconds = configurationUtil.getInteger("kumuluzee.metrics.logstash.period-s").orElse(60);
 
-        int startRetryDelay = configurationUtil.getInteger("kumuluzee.metrics.logstash.start-retry-delay-ms")
-                .orElse(500);
-        int maxRetryDelay = configurationUtil.getInteger("kumuluzee.metrics.logstash.max-retry-delay-ms")
-                .orElse(900000);
+            int startRetryDelay = configurationUtil.getInteger("kumuluzee.metrics.logstash.start-retry-delay-ms")
+                    .orElse(500);
+            int maxRetryDelay = configurationUtil.getInteger("kumuluzee.metrics.logstash.max-retry-delay-ms")
+                    .orElse(900000);
 
-        logstashReporter = new KumuluzEELogstashReporter(address, port, periodSeconds,
-                startRetryDelay, maxRetryDelay);
-        logstashReporter.start();
+            logstashReporter = new KumuluzEELogstashReporter(address, port, periodSeconds,
+                    startRetryDelay, maxRetryDelay);
+            logstashReporter.start();
+        }
     }
 
     @PreDestroy
