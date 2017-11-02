@@ -66,10 +66,19 @@ public class MetricsInitiator {
             log.info("Initialising KumuluzEE Metrics");
 
             // register servlet
-            boolean servletEnabled = configurationUtil.getBoolean("kumuluzee.metrics.servlet.enabled").orElse(true);
+            boolean servletEnabled = configurationUtil.getBoolean("kumuluzee.metrics.servlet.enabled")
+                    .orElse(true);
             if (servletEnabled) {
-                String servletMapping = configurationUtil.get("kumuluzee.metrics.servlet.mapping").orElse("/metrics/*");
+                String servletMapping = ConfigurationUtil.getInstance().get("kumuluzee.metrics.servlet.mapping")
+                        .orElse("/metrics/*");
 
+                if(!servletMapping.endsWith("/*")) {
+                    if(servletMapping.endsWith("/")) {
+                        servletMapping = servletMapping + "*";
+                    } else {
+                        servletMapping = servletMapping + "/*";
+                    }
+                }
                 log.info("Registering metrics servlet on " + servletMapping);
                 ServletRegistration.Dynamic dynamicRegistration = servletContext.addServlet("metrics",
                         new KumuluzEEMetricsServlet());

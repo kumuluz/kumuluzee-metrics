@@ -38,6 +38,8 @@ import java.util.Map;
  */
 public class RequestInfo {
 
+    private String servletEndpoint;
+
     private Map<String, MetricRegistry> requestedRegistries;
     private String metricName;
     private Metric metric;
@@ -61,6 +63,8 @@ public class RequestInfo {
     }
 
     public RequestInfo(HttpServletRequest request) {
+        this.servletEndpoint = request.getServletPath();
+
         this.requestedRegistries = new HashMap<>();
         this.metricName = null;
         this.metric = null;
@@ -91,57 +95,54 @@ public class RequestInfo {
     }
 
     private void determineRequestedMetrics(String uri) {
-        String[] splittedUri = uri.split("/");
-        for(int i = 0; i < splittedUri.length; i++) {
-            if("metrics".equals(splittedUri[i])) {
-                metricsRequested = MetricsRequested.ALL;
-                if(splittedUri.length > i+1) {
-                    metricsRequested = MetricsRequested.REGISTRY;
-                    MetricRegistry registry = parseRegistry(splittedUri[i+1]);
-                    if(registry == null) {
-                        metricsRequested = MetricsRequested.NOT_FOUND;
-                        return;
-                    }
-                    if(registry.getMetrics().size() == 0) {
-                        metricsRequested = MetricsRequested.NO_CONTENT;
-                        return;
-                    }
-                    requestedRegistries.put(splittedUri[i+1], registry);
-                }
-                if(splittedUri.length > i+2 && getSingleRequestedRegistry() != null) {
-                    metricsRequested = MetricsRequested.METRIC;
-                    metricName = splittedUri[i+2];
-                    if(requestType.equals(RequestType.JSON_METADATA)) {
-                        metadata = getSingleRequestedRegistry().getMetadata().get(metricName);
-                        if(metadata == null) {
-                            metricsRequested = MetricsRequested.NOT_FOUND;
-                            return;
-                        }
-                    } else {
-                        metric = getSingleRequestedRegistry().getMetrics().get(metricName);
-                        if(metric == null) {
-                            metricsRequested = MetricsRequested.NOT_FOUND;
-                            return;
-                        }
-                    }
-                }
+        // remove servlet endpoint from uri to get REST parts
+        String[] splittedUri = uri.substring(servletEndpoint.length()).split("/");
 
-                if(metricsRequested == MetricsRequested.ALL) {
-                    if (MetricRegistryProducer.getApplicationRegistry().getMetrics().size() > 0) {
-                        requestedRegistries.put("application", MetricRegistryProducer.getApplicationRegistry());
-                    }
-                    if (MetricRegistryProducer.getBaseRegistry().getMetrics().size() > 0) {
-                        requestedRegistries.put("base", MetricRegistryProducer.getBaseRegistry());
-                    }
-                    if (MetricRegistryProducer.getVendorRegistry().getMetrics().size() > 0) {
-                        requestedRegistries.put("vendor", MetricRegistryProducer.getVendorRegistry());
-                    }
-
-                    if (requestedRegistries.size() == 0) {
-                        metricsRequested = MetricsRequested.NO_CONTENT;
-                    }
+        metricsRequested = MetricsRequested.ALL;
+        if(splittedUri.length > 1) {
+            metricsRequested = MetricsRequested.REGISTRY;
+            MetricRegistry registry = parseRegistry(splittedUri[1]);
+            if(registry == null) {
+                metricsRequested = MetricsRequested.NOT_FOUND;
+                return;
+            }
+            if(registry.getMetrics().size() == 1) {
+                metricsRequested = MetricsRequested.NO_CONTENT;
+                return;
+            }
+            requestedRegistries.put(splittedUri[1], registry);
+        }
+        if(splittedUri.length > 2 && getSingleRequestedRegistry() != null) {
+            metricsRequested = MetricsRequested.METRIC;
+            metricName = splittedUri[2];
+            if(requestType.equals(RequestType.JSON_METADATA)) {
+                metadata = getSingleRequestedRegistry().getMetadata().get(metricName);
+                if(metadata == null) {
+                    metricsRequested = MetricsRequested.NOT_FOUND;
+                    return;
                 }
-                break;
+            } else {
+                metric = getSingleRequestedRegistry().getMetrics().get(metricName);
+                if(metric == null) {
+                    metricsRequested = MetricsRequested.NOT_FOUND;
+                    return;
+                }
+            }
+        }
+
+        if(metricsRequested == MetricsRequested.ALL) {
+            if (MetricRegistryProducer.getApplicationRegistry().getMetrics().size() > 0) {
+                requestedRegistries.put("application", MetricRegistryProducer.getApplicationRegistry());
+            }
+            if (MetricRegistryProducer.getBaseRegistry().getMetrics().size() > 0) {
+                requestedRegistries.put("base", MetricRegistryProducer.getBaseRegistry());
+            }
+            if (MetricRegistryProducer.getVendorRegistry().getMetrics().size() > 0) {
+                requestedRegistries.put("vendor", MetricRegistryProducer.getVendorRegistry());
+            }
+
+            if (requestedRegistries.size() == 0) {
+                metricsRequested = MetricsRequested.NO_CONTENT;
             }
         }
     }
