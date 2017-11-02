@@ -24,16 +24,15 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.JvmAttributeGaugeSet;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
-import com.codahale.metrics.jvm.ClassLoadingGaugeSet;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
-import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import com.kumuluz.ee.metrics.api.CounterImpl;
 import com.kumuluz.ee.metrics.api.HistogramImpl;
 import com.kumuluz.ee.metrics.api.MeterImpl;
 import com.kumuluz.ee.metrics.api.TimerImpl;
 import com.kumuluz.ee.metrics.producers.MetricRegistryProducer;
+import com.kumuluz.ee.metrics.utils.ForwardingCounter;
 import org.eclipse.microprofile.metrics.*;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -41,6 +40,10 @@ import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletRegistration;
+import java.lang.management.ClassLoadingMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
+import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -114,15 +117,21 @@ public class MetricsInitiator {
                         "even if the amount of used memory does not exceed this maximum size.",
                 MetricType.GAUGE,
                 MetricUnits.BYTES));
-        baseMetadata.put("count", new Metadata("thread.count",
+        baseMetadata.put("thread.count", new Metadata("thread.count",
                 "Thread Count",
                 "Displays the current number of live threads including both daemon and non-" +
                         "daemon threads",
                 MetricType.COUNTER,
                 MetricUnits.NONE));
-        baseMetadata.put("daemon.count", new Metadata("thread.daemon.count",
+        baseMetadata.put("thread.daemon.count", new Metadata("thread.daemon.count",
                 "Daemon Thread Count",
                 "Displays the current number of live daemon threads.",
+                MetricType.COUNTER,
+                MetricUnits.NONE));
+        baseMetadata.put("thread.max.count", new Metadata("thread.max.count",
+                "Peak Thread Count",
+                "Displays the peak live thread count since the Java virtual machine started or " +
+                        "peak was reset. This includes daemon and non-daemon threads.",
                 MetricType.COUNTER,
                 MetricUnits.NONE));
         baseMetadata.put("uptime", new Metadata("jvm.uptime",
@@ -132,26 +141,51 @@ public class MetricsInitiator {
                         "started.",
                 MetricType.GAUGE,
                 MetricUnits.MILLISECONDS));
-        baseMetadata.put("loaded", new Metadata("classloader.totalLoadedClass.count",
+        baseMetadata.put("classloader.totalLoadedClass.count",
+                new Metadata("classloader.totalLoadedClass.count",
                 "Total Loaded Class Count",
                 "Displays the total number of classes that have been loaded since the Java " +
                         "virtual machine has started execution.",
                 MetricType.COUNTER,
                 MetricUnits.NONE));
-        baseMetadata.put("unloaded", new Metadata("classloader.totalUnloadedClass.count",
+        baseMetadata.put("classloader.totalUnloadedClass.count",
+                new Metadata("classloader.totalUnloadedClass.count",
                 "Total Unloaded Class Count",
                 "Displays the total number of classes unloaded since the Java virtual machine " +
                         "has started execution.",
                 MetricType.COUNTER,
                 MetricUnits.NONE));
+        baseMetadata.put("classloader.currentLoadedClass.count",
+                new Metadata("classloader.currentLoadedClass.count",
+                        "Current Loaded Class Count",
+                        "Displays the number of classes that are currently loaded in the Java virtual " +
+                                "machine.",
+                        MetricType.COUNTER,
+                        MetricUnits.NONE));
+        baseMetadata.put("cpu.availableProcessors",
+                new Metadata("cpu.availableProcessors",
+                        "Available Processors",
+                        "Displays the number of processors available to the Java virtual machine. This " +
+                                "value may change during a particular invocation of the virtual machine.",
+                        MetricType.GAUGE,
+                        MetricUnits.NONE));
+        baseMetadata.put("cpu.systemLoadAverage",
+                new Metadata("cpu.systemLoadAverage",
+                        "System Load Average",
+                        "Displays the system load average for the last minute. The system load average " +
+                                "is the sum of the number of runnable entities queued to the available " +
+                                "processors and the number of runnable entities running on the available " +
+                                "processors averaged over a period of time.",
+                        MetricType.GAUGE,
+                        MetricUnits.NONE));
 
         MetricRegistry baseRegistry = MetricRegistryProducer.getBaseRegistry();
 
         registerDropwizardGcMetrics(baseRegistry, new GarbageCollectorMetricSet());
         registerDropwizardMetrics(baseRegistry, new MemoryUsageGaugeSet(), baseMetadata);
-        registerDropwizardMetrics(baseRegistry, new ThreadStatesGaugeSet(), baseMetadata);
         registerDropwizardMetrics(baseRegistry, new JvmAttributeGaugeSet(), baseMetadata);
-        registerDropwizardMetrics(baseRegistry, new ClassLoadingGaugeSet(), baseMetadata);
+
+        registerNonDropwizardMetrics(baseRegistry, baseMetadata);
     }
 
     private void registerDropwizardMetrics(MetricRegistry registry, MetricSet metricSet,
@@ -203,12 +237,65 @@ public class MetricsInitiator {
             return new TimerImpl((com.codahale.metrics.Timer) metric);
         } else if(metric instanceof com.codahale.metrics.Gauge) {
             if(type == MetricType.COUNTER) {
-                return new CounterImpl((com.codahale.metrics.Gauge) metric);
+                return new ForwardingCounter() {
+                    @Override
+                    public long getCount() {
+                        return ((Number)((com.codahale.metrics.Gauge) metric).getValue()).longValue();
+                    }
+                };
             } else {
                 return (Gauge<Object>) ((com.codahale.metrics.Gauge) metric)::getValue;
             }
         } else {
             return null;
         }
+    }
+
+    private void registerNonDropwizardMetrics(MetricRegistry registry, Map<String, Metadata> metadataMap) {
+        ClassLoadingMXBean classLoadingMXBean = ManagementFactory.getClassLoadingMXBean();
+        registry.register("classloader.currentLoadedClass.count", new ForwardingCounter() {
+                    @Override
+                    public long getCount() {
+                        return classLoadingMXBean.getLoadedClassCount();
+                    }
+                }, metadataMap.get("classloader.currentLoadedClass.count"));
+        registry.register("classloader.totalLoadedClass.count", new ForwardingCounter() {
+            @Override
+            public long getCount() {
+                return classLoadingMXBean.getTotalLoadedClassCount();
+            }
+        }, metadataMap.get("classloader.totalLoadedClass.count"));
+        registry.register("classloader.totalUnloadedClass.count", new ForwardingCounter() {
+            @Override
+            public long getCount() {
+                return classLoadingMXBean.getUnloadedClassCount();
+            }
+        }, metadataMap.get("classloader.totalUnloadedClass.count"));
+
+        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        registry.register("thread.count", new ForwardingCounter() {
+            @Override
+            public long getCount() {
+                return threadMXBean.getThreadCount();
+            }
+        }, metadataMap.get("thread.count"));
+        registry.register("thread.daemon.count", new ForwardingCounter() {
+            @Override
+            public long getCount() {
+                return threadMXBean.getDaemonThreadCount();
+            }
+        }, metadataMap.get("thread.daemon.count"));
+        registry.register("thread.max.count", new ForwardingCounter() {
+            @Override
+            public long getCount() {
+                return threadMXBean.getPeakThreadCount();
+            }
+        }, metadataMap.get("thread.max.count"));
+
+        OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
+        registry.register("cpu.availableProcessors", (Gauge<Integer>) operatingSystemMXBean::getAvailableProcessors,
+                metadataMap.get("cpu.availableProcessors"));
+        registry.register("cpu.systemLoadAverage", (Gauge<Double>) operatingSystemMXBean::getSystemLoadAverage,
+                metadataMap.get("cpu.systemLoadAverage"));
     }
 }

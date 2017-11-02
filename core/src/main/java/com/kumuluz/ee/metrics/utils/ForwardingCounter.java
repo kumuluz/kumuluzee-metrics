@@ -18,50 +18,31 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
 */
-package com.kumuluz.ee.metrics.api;
+package com.kumuluz.ee.metrics.utils;
 
 import org.eclipse.microprofile.metrics.Counter;
 
 /**
- * Microprofile Counter implementation.
+ * Microprofile Counter with unimplemented getCount().
  *
  * @author Urban Malc
  * @author Aljaž Blažej
  */
-public class CounterImpl implements Counter {
-
-    private com.codahale.metrics.Counter counter;
-
-    public CounterImpl() {
-        this.counter = new com.codahale.metrics.Counter();
-    }
-
-    public CounterImpl(com.codahale.metrics.Counter counter) {
-        this.counter = counter;
-    }
+public abstract class ForwardingCounter implements Counter {
 
     @Override
     public void inc() {
-        this.counter.inc();
     }
 
     @Override
     public void inc(long l) {
-        this.counter.inc(l);
     }
 
     @Override
     public void dec() {
-        this.counter.dec();
     }
 
     @Override
     public void dec(long l) {
-        this.counter.dec(l);
-    }
-
-    @Override
-    public long getCount() {
-        return this.counter.getCount();
     }
 }
