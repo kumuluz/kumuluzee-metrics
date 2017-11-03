@@ -31,6 +31,7 @@ import com.kumuluz.ee.metrics.api.CounterImpl;
 import com.kumuluz.ee.metrics.api.HistogramImpl;
 import com.kumuluz.ee.metrics.api.MeterImpl;
 import com.kumuluz.ee.metrics.api.TimerImpl;
+import com.kumuluz.ee.metrics.filters.InstrumentedFilter;
 import com.kumuluz.ee.metrics.producers.MetricRegistryProducer;
 import com.kumuluz.ee.metrics.utils.ForwardingCounter;
 import org.eclipse.microprofile.metrics.*;
@@ -38,15 +39,17 @@ import org.eclipse.microprofile.metrics.*;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
+import javax.servlet.DispatcherType;
+import javax.servlet.FilterRegistration;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletRegistration;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.ThreadMXBean;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Initializes Metrics module.
@@ -68,6 +71,8 @@ public class MetricsInitiator {
 
             log.info("Initialising KumuluzEE Metrics");
 
+            registerBaseMetrics();
+
             // register servlet
             boolean servletEnabled = configurationUtil.getBoolean("kumuluzee.metrics.servlet.enabled")
                     .orElse(true);
@@ -88,7 +93,29 @@ public class MetricsInitiator {
                 dynamicRegistration.addMapping(servletMapping);
             }
 
-            registerBaseMetrics();
+            // register filters
+            String webInstrumentationKey = "kumuluzee.metrics.web-instrumentation[%d]";
+            Optional<String> urlPattern;
+            int i = 0;
+            while ((urlPattern = configurationUtil.get(String.format(webInstrumentationKey + ".url-pattern", i)))
+                    .isPresent()) {
+                Optional<String> filterName = configurationUtil.get(String
+                        .format(webInstrumentationKey + ".name", i));
+                if (filterName.isPresent()) {
+                    List<Integer> statusCodes = parseStatusCodes(configurationUtil.get(String
+                            .format(webInstrumentationKey + ".status-codes", i))
+                            .orElse("200,201,204,400,404,500"));
+                    log.info("Registering metrics filter " + filterName.get() + " on " + urlPattern.get() +
+                            " with status codes [" + statusCodes.stream().map(Object::toString)
+                            .collect(Collectors.joining(", ")) + "]");
+                    FilterRegistration.Dynamic filterRegistration = servletContext
+                            .addFilter(filterName.get(), new InstrumentedFilter(filterName.get(), statusCodes));
+                    filterRegistration.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true,
+                            urlPattern.get());
+                }
+
+                i++;
+            }
         }
     }
 
@@ -297,5 +324,18 @@ public class MetricsInitiator {
                 metadataMap.get("cpu.availableProcessors"));
         registry.register("cpu.systemLoadAverage", (Gauge<Double>) operatingSystemMXBean::getSystemLoadAverage,
                 metadataMap.get("cpu.systemLoadAverage"));
+    }
+
+    private List<Integer> parseStatusCodes(String codes) {
+        List<Integer> scList = new LinkedList<>();
+        for (String sc : codes.split(",")) {
+            try {
+                scList.add(Integer.parseInt(sc.trim()));
+            } catch (NumberFormatException e) {
+                log.warning("Unable to parse status code: " + sc.trim());
+            }
+        }
+
+        return scList;
     }
 }

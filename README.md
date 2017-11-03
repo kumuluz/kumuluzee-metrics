@@ -183,6 +183,33 @@ private Counter evictions = registry.counter(MetricRegistry.name(SessionStore.cl
 
 ## Included monitoring tools
 
+### Web Application Monitoring
+
+The module also includes Web Application monitoring, which enables the instrumentation of all requests at a defined 
+endpoint. This includes counting the number of responses by status code and the time it took to process the request.
+You can enable Web Application monitoring on multiple endpoints by defining the following configuration keys:
+- `kumuluzee.metrics.web-instrumentation[x].name`: Name of the Web Application monitoring. All metrics, collected for
+  the defined web instrumentation, will have this value in their name.
+- `kumuluzee.metrics.web-instrumentation[x].url-pattern`: All requests, matching this pattern will be instrumented.
+- `kumuluzee.metrics.web-instrumentation[x].status-codes`: Comma separated list of status codes. For each status code
+  in the list, a separate meter metering the number of responses will be created. Default value:
+  `200,201,204,400,404,500`.
+
+Here is an example of monitoring two different urls:
+
+```yaml
+kumuluzee:
+    metrics:
+        web-instrumentation:
+          - name: metrics-endpoint
+            url-pattern: /metrics/*
+            status-codes: "200, 500"
+          - name: prometheus-endpoint
+            url-pattern: /prometheus/*
+```
+
+Web Application metrics will be reported in the `vendor` registry, prefixed with `webInstrumentation.<monitoring-name>`.
+
 ### Base metrics
 
 Base metrics are included in the `base` registry. They contain various metrics about the Java Virtual Machine like
