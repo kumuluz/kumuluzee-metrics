@@ -159,6 +159,26 @@ Alongside metric's name, the following metadata is stored for each metric:
 - `unit` - Unit of the metric. Default: `MetricUnits.NONE`.
 - `tags` - Tags of the metric.
 
+Metadata is specified using annotation parameters in `@Metric`, `@Gauge`, `@Counted`, `@Metered` and `@Timed`
+annotations.
+
+### Metric tags
+
+Global metrics tags can be added by specifying them in the `MP_METRICS_TAGS` environment variable:
+
+```bash
+$ export MP_METRICS_TAGS=app=shop,tier=integration
+```
+
+By default the following tags are added to every metric:
+- `environment` - Environment in which the service is running. Read from the configuration key `kumuluzee.env.name`.
+  Default value `dev`.
+- `serviceName` - Name of the service. Read from the configuration key `kumuluzee.name`. Default value `UNKNOWN`.
+- `serviceVersion` - Version of the service. Read from the configuration key `kumuluzee.version`. Default value `1.0.0`.
+- `instanceId` - UUID of the service. Changes every time the service is started.
+
+To disable these default tags, set the configuration key `kumuluzee.metrics.add-default-tags` to `false`.
+
 ## Metric Registries
 
 Metric registries are used for grouping metrics. All metrics from annotated methods and fields are stored in a generic

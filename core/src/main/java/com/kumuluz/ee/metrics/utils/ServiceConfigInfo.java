@@ -22,6 +22,7 @@ package com.kumuluz.ee.metrics.utils;
 
 import com.kumuluz.ee.common.config.EeConfig;
 import com.kumuluz.ee.common.runtime.EeRuntime;
+import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 
 /**
  * Configuration class, used for exporting metrics.
@@ -37,6 +38,8 @@ public class ServiceConfigInfo {
     private String serviceName;
     private String serviceVersion;
     private String instanceId;
+
+    private boolean addToTags;
 
     private ServiceConfigInfo() {
         EeConfig eeConfig = EeConfig.getInstance();
@@ -57,6 +60,9 @@ public class ServiceConfigInfo {
         }
 
         this.instanceId = EeRuntime.getInstance().getInstanceId();
+
+        this.addToTags = ConfigurationUtil.getInstance().getBoolean("kumuluzee.metrics.add-default-tags")
+                .orElse(true);
     }
 
     public String getEnvironment() {
@@ -81,5 +87,9 @@ public class ServiceConfigInfo {
         }
 
         return instance;
+    }
+
+    public boolean shouldAddToTags() {
+        return addToTags;
     }
 }

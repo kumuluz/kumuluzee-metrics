@@ -20,6 +20,7 @@
 */
 package com.kumuluz.ee.metrics.api;
 
+import com.kumuluz.ee.metrics.utils.ServiceConfigInfo;
 import org.eclipse.microprofile.metrics.*;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -41,12 +42,19 @@ public class MetricRegistryImpl extends MetricRegistry {
 
     @Override
     public <T extends Metric> T register(String name, T t) throws IllegalArgumentException {
-        metricRegistry.register(name, new MetricAdapter(t, new Metadata(name, MetricType.from(t.getClass()))));
-        return t;
+        return register(name, t, new Metadata(name, MetricType.from(t.getClass())));
     }
 
     @Override
     public <T extends Metric> T register(String name, T t, Metadata metadata) throws IllegalArgumentException {
+        // add default tags
+        ServiceConfigInfo configInfo = ServiceConfigInfo.getInstance();
+        if(configInfo.shouldAddToTags()) {
+            metadata.addTag("environment=" + configInfo.getEnvironment());
+            metadata.addTag("serviceName=" + configInfo.getServiceName());
+            metadata.addTag("serviceVersion=" + configInfo.getServiceVersion());
+            metadata.addTag("instanceId=" + configInfo.getInstanceId());
+        }
         metricRegistry.register(name, new MetricAdapter(t, metadata));
         return t;
     }
