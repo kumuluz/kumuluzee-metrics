@@ -93,9 +93,9 @@ public class InstrumentedFilter implements Filter {
                 MetricType.METERED, MetricUnits.NONE);
         this.activeRequests = metricsRegistry.counter(activeRequestsMetadata);
 
-        Metadata timerMetadata = new Metadata(MetricRegistry.name(metricPrefix, "responseTimes"),
-                this.instrumentationName + " response time",
-                "Response time for " + this.instrumentationName,
+        Metadata timerMetadata = new Metadata(MetricRegistry.name(metricPrefix, "response"),
+                this.instrumentationName + " response timer",
+                "Response timer for " + this.instrumentationName,
                 MetricType.TIMER, MetricUnits.NANOSECONDS);
         this.requestTimer = metricsRegistry.timer(timerMetadata);
 
