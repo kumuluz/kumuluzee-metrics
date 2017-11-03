@@ -77,7 +77,7 @@ public class RequestInfo {
     }
 
     private RequestType determineRequestType(HttpServletRequest request) {
-        if(request.getHeader("Accept").equals(MediaType.APPLICATION_JSON)) {
+        if(request.getHeader("Accept") != null && request.getHeader("Accept").equals(MediaType.APPLICATION_JSON)) {
             if(request.getMethod().equals("GET")) {
                 return RequestType.JSON_METRIC;
             } else if(request.getMethod().equals("OPTIONS")) {
