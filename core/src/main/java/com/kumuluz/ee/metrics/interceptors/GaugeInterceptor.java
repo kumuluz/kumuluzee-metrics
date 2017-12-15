@@ -44,7 +44,7 @@ import java.lang.reflect.Method;
  */
 @Interceptor
 @GaugeBeanBinding
-@Priority(Interceptor.Priority.LIBRARY_BEFORE)
+@Priority(Interceptor.Priority.LIBRARY_BEFORE - 11)
 public class GaugeInterceptor {
 
     @Inject
@@ -59,7 +59,8 @@ public class GaugeInterceptor {
         do {
             for (Method method : type.getDeclaredMethods()) {
                 if(method.isAnnotationPresent(org.eclipse.microprofile.metrics.annotation.Gauge.class)) {
-                    Metadata metadata = AnnotationMetadata.buildMetadataFromGauge(method);
+                    Metadata metadata = AnnotationMetadata.buildMetadata(type, method,
+                            org.eclipse.microprofile.metrics.annotation.Gauge.class);
                     Gauge gauge = applicationRegistry.getGauges().get(metadata.getName());
 
                     if (gauge == null) {

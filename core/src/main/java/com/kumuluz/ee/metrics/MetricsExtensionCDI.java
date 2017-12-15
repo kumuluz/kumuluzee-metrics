@@ -22,17 +22,24 @@ package com.kumuluz.ee.metrics;
 
 import com.kumuluz.ee.metrics.interceptors.utils.AnnotatedTypeDecorator;
 import com.kumuluz.ee.metrics.interceptors.utils.GaugeBeanBinding;
+import com.kumuluz.ee.metrics.interceptors.utils.RegisterMetricsBinding;
 import com.kumuluz.ee.metrics.producers.MetricRegistryProducer;
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
 import com.kumuluz.ee.metrics.utils.ProducerMemberRegistration;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
+import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.*;
 import javax.enterprise.util.AnnotationLiteral;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,8 +56,20 @@ public class MetricsExtensionCDI implements Extension {
 
     private List<ProducerMemberRegistration> producerMembers = new LinkedList<>();
 
+    private static final AnnotationLiteral<Default> DEFAULT = new AnnotationLiteral<Default>(){};
+
     private static final AnnotationLiteral<GaugeBeanBinding> GAUGE_BEAN_BINDING =
             new AnnotationLiteral<GaugeBeanBinding>() {};
+
+    private static final AnnotationLiteral<RegisterMetricsBinding> REGISTER_METRICS_BINDING =
+            new AnnotationLiteral<RegisterMetricsBinding>() {};
+
+    private <X> void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class})
+                                             ProcessAnnotatedType<X> pat) {
+        AnnotatedTypeDecorator<X> decoratedType = new AnnotatedTypeDecorator<>(pat.getAnnotatedType(),
+                REGISTER_METRICS_BINDING);
+        pat.setAnnotatedType(decoratedType);
+    }
 
     private <X> void registerGauges(@Observes @WithAnnotations({Gauge.class}) ProcessAnnotatedType<X> pat) {
         AnnotatedTypeDecorator<X> decoratedType = new AnnotatedTypeDecorator<>(pat.getAnnotatedType(),
@@ -61,8 +80,10 @@ public class MetricsExtensionCDI implements Extension {
     private void metricProducerField(@Observes ProcessProducerField<? extends Metric, ?> ppf) {
         if (ppf.getAnnotatedProducerField().getAnnotation(org.eclipse.microprofile.metrics.annotation.Metric.class)
                 != null) {
-            Metadata metadata = AnnotationMetadata.buildMetricMetadata(ppf.getAnnotatedProducerField()
-                    .getJavaMember(), ppf.getAnnotatedProducerField().getBaseType());
+            Field member = ppf.getAnnotatedProducerField().getJavaMember();
+            Class<?> bean = member.getDeclaringClass();
+            Metadata metadata = AnnotationMetadata.buildMetadata(bean, member,
+                    org.eclipse.microprofile.metrics.annotation.Metric.class);
             producerMembers.add(new ProducerMemberRegistration(ppf.getBean(), ppf.getAnnotatedProducerField(),
                     metadata));
         }
@@ -71,8 +92,10 @@ public class MetricsExtensionCDI implements Extension {
     private void metricProducerMethod(@Observes ProcessProducerMethod<? extends Metric, ?> ppm) {
         if (ppm.getAnnotatedProducerMethod().getAnnotation(org.eclipse.microprofile.metrics.annotation.Metric.class)
                 != null) {
-            Metadata metadata = AnnotationMetadata.buildMetricMetadata(ppm.getAnnotatedProducerMethod()
-                    .getJavaMember(), ppm.getAnnotatedProducerMethod().getBaseType());
+            Method member = ppm.getAnnotatedProducerMethod().getJavaMember();
+            Class<?> bean = member.getDeclaringClass();
+            Metadata metadata = AnnotationMetadata.buildMetadata(bean, member,
+                    org.eclipse.microprofile.metrics.annotation.Metric.class);
             producerMembers.add(new ProducerMemberRegistration(ppm.getBean(), ppm.getAnnotatedProducerMethod(),
                     metadata));
         }
@@ -80,11 +103,26 @@ public class MetricsExtensionCDI implements Extension {
 
     private void registerMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
         for (ProducerMemberRegistration registration : producerMembers) {
-            applicationRegistry.register(registration.getMetadata().getName(), getReference(manager,
-                    registration.getMember().getBaseType(), registration.getBean()), registration.getMetadata());
+            if (registration.getBean().getQualifiers().contains(DEFAULT) &&
+                    !hasInjectionPoints(registration.getMember())) {
+                applicationRegistry.register(registration.getMetadata().getName(), getReference(manager,
+                        registration.getMember().getBaseType(), registration.getBean()), registration.getMetadata());
+            }
         }
     }
 
+    private static boolean hasInjectionPoints(AnnotatedMember<?> member) {
+        if (!(member instanceof AnnotatedMethod))
+            return false;
+        AnnotatedMethod<?> method = (AnnotatedMethod<?>) member;
+        for (AnnotatedParameter<?> parameter : method.getParameters()) {
+            if (parameter.getBaseType().equals(InjectionPoint.class))
+                return true;
+        }
+        return false;
+    }
+
+    @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager manager, Type type, Bean<?> bean) {
         return (T) manager.getReference(bean, type, manager.createCreationalContext(bean));
     }

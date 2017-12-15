@@ -27,7 +27,9 @@ import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
 import javax.enterprise.inject.spi.InjectionPoint;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.util.Arrays;
 
 /**
  * Metadata Builders.
@@ -37,141 +39,122 @@ import java.lang.reflect.*;
  */
 public class AnnotationMetadata {
 
-    public static Metadata buildProducerMetadata(InjectionPoint injectionPoint, MetricType metricType) {
-        Metric annotation = injectionPoint.getAnnotated().getAnnotation(Metric.class);
-        String name = (annotation == null || annotation.name().isEmpty()) ? memberName(injectionPoint.getMember()) :
-                annotation.name();
+    public static <E extends AnnotatedElement, T extends Annotation> T getAnnotation
+            (Class<?> bean, E element, Class<T> annotationClass) {
 
-        String namePrefix = (annotation == null || !annotation.absolute()) ? injectionPoint.getMember()
-                .getDeclaringClass().getName() + "." : "";
+        if (element.getAnnotation(annotationClass) != null) {
+            return element.getAnnotation(annotationClass);
+        } else {
+            do {
+                if (bean.getAnnotation(annotationClass) != null) {
+                    return bean.getAnnotation(annotationClass);
+                }
+                bean = bean.getSuperclass();
+            } while (Object.class.equals(bean));
 
-        Metadata metadata = new Metadata(namePrefix + name, metricType);
-        metadata.setDescription("");
-
-        if (annotation != null) {
-            for (String tag : annotation.tags()) {
-                metadata.addTag(tag);
-            }
-            metadata.setDisplayName(annotation.displayName());
-            metadata.setDescription(annotation.description());
-            metadata.setUnit(annotation.unit());
+            return null;
         }
+    }
+
+    public static <E extends Member & AnnotatedElement, T extends Annotation> Metadata buildMetadata
+            (Class<?> bean, E element, Class<T> annotationClass) {
+        T annotation = getAnnotation(bean, element, annotationClass);
+        boolean fromElement = element.isAnnotationPresent(annotationClass);
+        return buildMetadata(bean, element, annotation, fromElement);
+    }
+
+    private static <M extends Member, T extends Annotation> Metadata buildMetadata(Class<?> bean, M member,
+                                                                                   T annotation, boolean fromElement) {
+
+        MetricType type;
+        boolean absolute;
+        String name = "";
+        String[] tags = {};
+        String displayName = "";
+        String description = "";
+        String unit = MetricUnits.NONE;
+        if (Counted.class.isInstance(annotation)) {
+            Counted a = (Counted)annotation;
+            type = MetricType.COUNTER;
+            absolute = a.absolute();
+            name = a.name();
+            tags = a.tags();
+            displayName = a.displayName();
+            description = a.description();
+            unit = a.unit();
+        } else if (Timed.class.isInstance(annotation)) {
+            Timed a = (Timed)annotation;
+            type = MetricType.TIMER;
+            absolute = a.absolute();
+            name = a.name();
+            tags = a.tags();
+            displayName = a.displayName();
+            description = a.description();
+            unit = a.unit();
+        } else if (Metered.class.isInstance(annotation)) {
+            Metered a = (Metered)annotation;
+            type = MetricType.METERED;
+            absolute = a.absolute();
+            name = a.name();
+            tags = a.tags();
+            displayName = a.displayName();
+            description = a.description();
+            unit = a.unit();
+        } else if (Gauge.class.isInstance(annotation)) {
+            Gauge a = (Gauge)annotation;
+            type = MetricType.GAUGE;
+            absolute = a.absolute();
+            name = a.name();
+            tags = a.tags();
+            displayName = a.displayName();
+            description = a.description();
+            unit = a.unit();
+        } else if (Metric.class.isInstance(annotation)) {
+            Metric a = (Metric)annotation;
+            type = getMetricType(member);
+            absolute = a.absolute();
+            name = a.name();
+            tags = a.tags();
+            displayName = a.displayName();
+            description = a.description();
+            unit = a.unit();
+        } else {
+            absolute = false;
+            type = getMetricType(member);
+        }
+
+        String finalName;
+
+        if (annotation == null) {
+            // no annotation
+            finalName = MetricRegistry.name(bean.getName(), memberName(member));
+        } else if (fromElement) {
+            // annotated member
+            finalName = (name.isEmpty()) ? memberName(member) : name;
+            if (!absolute) {
+                finalName = MetricRegistry.name(bean.getName(), finalName);
+            }
+        } else {
+            // annotated class
+            finalName = MetricRegistry.name((name.isEmpty()) ? bean.getSimpleName() : name,
+                    memberName(member));
+            if (!absolute) {
+                finalName = MetricRegistry.name(bean.getPackage().getName(), finalName);
+            }
+        }
+
+        Metadata metadata = new Metadata(finalName, type);
+        Arrays.stream(tags).forEach(metadata::addTag);
+        metadata.setDisplayName(displayName);
+        metadata.setDescription(description);
+        metadata.setUnit(unit);
 
         return metadata;
     }
 
-    public static <E extends Member & AnnotatedElement> Metadata buildMetricMetadata(E element, Type t) {
-        Metric annotation = element.getAnnotation(Metric.class);
-        String name = (annotation == null || annotation.name().isEmpty()) ? memberName(element) :
-                annotation.name();
-
-        String namePrefix = (annotation == null || !annotation.absolute()) ? element.getDeclaringClass().getName()
-                + "." : "";
-
-        if(t instanceof ParameterizedType) {
-            t = ((ParameterizedType) t).getRawType();
-        }
-        Metadata metadata = new Metadata(namePrefix + name, MetricType.from((Class)t));
-        metadata.setDescription("");
-
-        if (annotation != null) {
-            for (String tag : annotation.tags()) {
-                metadata.addTag(tag);
-            }
-            metadata.setDisplayName(annotation.displayName());
-            metadata.setDescription(annotation.description());
-            metadata.setUnit(annotation.unit());
-        }
-
-        return metadata;
-    }
-
-    public static <E extends Member & AnnotatedElement> Metadata buildMetadataFromCounted(E element) {
-        Counted annotation = element.getAnnotation(Counted.class);
-        String name = (annotation == null || annotation.name().isEmpty()) ? memberName(element) : annotation.name();
-
-        String namePrefix = (annotation == null || !annotation.absolute()) ? element.getDeclaringClass().getName()
-                + "." : "";
-
-        Metadata metadata = new Metadata(namePrefix + name, MetricType.COUNTER);
-        metadata.setDescription("");
-
-        if (annotation != null) {
-            for (String tag : annotation.tags()) {
-                metadata.addTag(tag);
-            }
-            metadata.setDisplayName(annotation.displayName());
-            metadata.setDescription(annotation.description());
-            metadata.setUnit(annotation.unit());
-        }
-
-        return metadata;
-    }
-
-    public static <E extends Member & AnnotatedElement> Metadata buildMetadataFromGauge(E element) {
-        Gauge annotation = element.getAnnotation(Gauge.class);
-        String name = (annotation == null || annotation.name().isEmpty()) ? memberName(element) : annotation.name();
-
-        String namePrefix = (annotation == null || !annotation.absolute()) ? element.getDeclaringClass().getName()
-                + "." : "";
-
-        Metadata metadata = new Metadata(namePrefix + name, MetricType.COUNTER);
-        metadata.setDescription("");
-
-        if (annotation != null) {
-            for (String tag : annotation.tags()) {
-                metadata.addTag(tag);
-            }
-            metadata.setDisplayName(annotation.displayName());
-            metadata.setDescription(annotation.description());
-            metadata.setUnit(annotation.unit());
-        }
-
-        return metadata;
-    }
-
-    public static <E extends Member & AnnotatedElement> Metadata buildMetadataFromMetered(E element) {
-        Metered annotation = element.getAnnotation(Metered.class);
-        String name = (annotation == null || annotation.name().isEmpty()) ? memberName(element) : annotation.name();
-
-        String namePrefix = (annotation == null || !annotation.absolute()) ? element.getDeclaringClass().getName()
-                + "." : "";
-
-        Metadata metadata = new Metadata(namePrefix + name, MetricType.COUNTER);
-        metadata.setDescription("");
-
-        if (annotation != null) {
-            for (String tag : annotation.tags()) {
-                metadata.addTag(tag);
-            }
-            metadata.setDisplayName(annotation.displayName());
-            metadata.setDescription(annotation.description());
-            metadata.setUnit(annotation.unit());
-        }
-
-        return metadata;
-    }
-
-    public static <E extends Member & AnnotatedElement> Metadata buildMetadataFromTimed(E element) {
-        Timed annotation = element.getAnnotation(Timed.class);
-        String name = (annotation == null || annotation.name().isEmpty()) ? memberName(element) : annotation.name();
-
-        String namePrefix = (annotation == null || !annotation.absolute()) ? element.getDeclaringClass().getName()
-                + "." : "";
-
-        Metadata metadata = new Metadata(namePrefix + name, MetricType.COUNTER);
-        metadata.setDescription("");
-
-        if (annotation != null) {
-            for (String tag : annotation.tags()) {
-                metadata.addTag(tag);
-            }
-            metadata.setDisplayName(annotation.displayName());
-            metadata.setDescription(annotation.description());
-            metadata.setUnit(annotation.unit());
-        }
-
-        return metadata;
+    public static Metadata buildProducerMetadata(InjectionPoint injectionPoint) {
+        return buildMetadata(injectionPoint.getMember().getDeclaringClass(), injectionPoint.getMember(),
+                injectionPoint.getAnnotated().getAnnotation(Metric.class), true);
     }
 
     private static String memberName(Member member) {
@@ -181,7 +164,7 @@ public class AnnotationMetadata {
             return member.getName();
     }
 
-    private static <E extends Member & AnnotatedElement> MetricType getMetricType(E element) {
+    private static <E extends Member> MetricType getMetricType(E element) {
         if (element instanceof Counter) {
             return MetricType.COUNTER;
         } else if (element instanceof Histogram) {

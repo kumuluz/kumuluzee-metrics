@@ -21,11 +21,14 @@
 package com.kumuluz.ee.metrics.interceptors;
 
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 
 import javax.annotation.Priority;
+import javax.enterprise.inject.Intercepted;
+import javax.enterprise.inject.spi.Bean;
 import javax.inject.Inject;
 import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
@@ -48,6 +51,10 @@ public class MeteredInterceptor {
     @Inject
     private MetricRegistry applicationRegistry;
 
+    @Inject
+    @Intercepted
+    private Bean<?> bean;
+
 
     @AroundConstruct
     private Object meteredConstructor(InvocationContext context) throws Exception {
@@ -61,7 +68,13 @@ public class MeteredInterceptor {
 
     private <E extends Member & AnnotatedElement> Object applyInterceptor(InvocationContext context, E member)
             throws Exception {
-        Meter meter = applicationRegistry.meter(AnnotationMetadata.buildMetadataFromMetered(member));
+        Metadata metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, Metered.class);
+        Meter meter = applicationRegistry.getMeters().get(metadata.getName());
+        if (meter == null) {
+            throw new IllegalStateException("No meter with name [" + metadata.getName() + "] found in registry ["
+                    + applicationRegistry + "]");
+        }
+
         meter.mark();
 
         return context.proceed();

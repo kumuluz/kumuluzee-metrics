@@ -106,7 +106,7 @@ public class RequestInfo {
                 metricsRequested = MetricsRequested.NOT_FOUND;
                 return;
             }
-            if(registry.getMetrics().size() == 1) {
+            if(registry.getMetrics().size() == 0) {
                 metricsRequested = MetricsRequested.NO_CONTENT;
                 return;
             }

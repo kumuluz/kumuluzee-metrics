@@ -23,10 +23,13 @@ package com.kumuluz.ee.metrics.producers;
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
 import org.eclipse.microprofile.metrics.*;
 
+import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Alternative;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.inject.Inject;
+import javax.interceptor.Interceptor;
 
 /**
  * Producers for Microprofile metrics.
@@ -34,33 +37,39 @@ import javax.inject.Inject;
  * @author Urban Malc
  * @author Aljaž Blažej
  */
+@Alternative
 @ApplicationScoped
+@Priority(Interceptor.Priority.LIBRARY_BEFORE)
 public class MetricProducer {
 
     @Inject
-    MetricRegistry applicationRegistry;
+    private MetricRegistry applicationRegistry;
 
     @Produces
     public Meter produceMeter(InjectionPoint injectionPoint) {
-        return applicationRegistry.meter(AnnotationMetadata.buildProducerMetadata(injectionPoint,
-                MetricType.METERED));
+        return applicationRegistry.meter(AnnotationMetadata.buildProducerMetadata(injectionPoint));
     }
 
     @Produces
     public Timer produceTimer(InjectionPoint injectionPoint) {
-        return applicationRegistry.timer(AnnotationMetadata.buildProducerMetadata(injectionPoint,
-                MetricType.TIMER));
+        return applicationRegistry.timer(AnnotationMetadata.buildProducerMetadata(injectionPoint));
     }
 
     @Produces
     public Counter produceCounter(InjectionPoint injectionPoint) {
-        return applicationRegistry.counter(AnnotationMetadata.buildProducerMetadata(injectionPoint,
-                MetricType.COUNTER));
+        return applicationRegistry.counter(AnnotationMetadata.buildProducerMetadata(injectionPoint));
     }
 
     @Produces
     public Histogram produceHistogram(InjectionPoint injectionPoint) {
-        return applicationRegistry.histogram(AnnotationMetadata.buildProducerMetadata(injectionPoint,
-                MetricType.HISTOGRAM));
+        return applicationRegistry.histogram(AnnotationMetadata.buildProducerMetadata(injectionPoint));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Produces
+    public <T> Gauge<T> produceGauge(InjectionPoint injectionPoint) {
+        Metadata m = AnnotationMetadata.buildProducerMetadata(injectionPoint);
+
+        return () -> (T) applicationRegistry.getGauges().get(m.getName()).getValue();
     }
 }

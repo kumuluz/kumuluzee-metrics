@@ -21,11 +21,14 @@
 package com.kumuluz.ee.metrics.interceptors;
 
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import javax.annotation.Priority;
+import javax.enterprise.inject.Intercepted;
+import javax.enterprise.inject.spi.Bean;
 import javax.inject.Inject;
 import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
@@ -48,6 +51,10 @@ public class TimedInterceptor {
     @Inject
     private MetricRegistry applicationRegistry;
 
+    @Inject
+    @Intercepted
+    private Bean<?> bean;
+
     @AroundConstruct
     private Object timedConstructor(InvocationContext context) throws Exception {
         return applyInterceptor(context, context.getConstructor());
@@ -60,7 +67,13 @@ public class TimedInterceptor {
 
     private <E extends Member & AnnotatedElement> Object applyInterceptor(InvocationContext context, E member)
             throws Exception {
-        Timer timer = applicationRegistry.timer(AnnotationMetadata.buildMetadataFromTimed(member));
+        Metadata metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, Timed.class);
+        Timer timer = applicationRegistry.getTimers().get(metadata.getName());
+        if (timer == null) {
+            throw new IllegalStateException("No timer with name [" + metadata.getName() + "] found in registry ["
+                    + applicationRegistry + "]");
+        }
+
         Timer.Context timerContext = timer.time();
 
         try {

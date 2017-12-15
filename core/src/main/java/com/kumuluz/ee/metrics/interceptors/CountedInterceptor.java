@@ -22,10 +22,13 @@ package com.kumuluz.ee.metrics.interceptors;
 
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
 import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 import javax.annotation.Priority;
+import javax.enterprise.inject.Intercepted;
+import javax.enterprise.inject.spi.Bean;
 import javax.inject.Inject;
 import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
@@ -48,6 +51,10 @@ public class CountedInterceptor {
     @Inject
     private MetricRegistry applicationRegistry;
 
+    @Inject
+    @Intercepted
+    private Bean<?> bean;
+
     @AroundConstruct
     private Object countedConstructor(InvocationContext context) throws Exception {
         return applyInterceptor(context, context.getConstructor());
@@ -60,13 +67,19 @@ public class CountedInterceptor {
 
     private <E extends Member & AnnotatedElement> Object applyInterceptor(InvocationContext context, E member)
             throws Exception {
-        Counter counter = applicationRegistry.counter(AnnotationMetadata.buildMetadataFromCounted(member));
+        Metadata metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, Counted.class);
+        Counter counter = applicationRegistry.getCounters().get(metadata.getName());
+        if (counter == null) {
+            throw new IllegalStateException("No counter with name [" + metadata.getName() + "] found in registry ["
+                    + applicationRegistry + "]");
+        }
+
         counter.inc();
 
         try {
             return context.proceed();
         } finally {
-            Counted annotation = member.getAnnotation(Counted.class);
+            Counted annotation = AnnotationMetadata.getAnnotation(bean.getBeanClass(), member, Counted.class);
             if(annotation != null && !annotation.monotonic()) {
                 counter.dec();
             }
