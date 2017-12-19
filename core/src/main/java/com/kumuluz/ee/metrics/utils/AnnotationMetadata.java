@@ -127,12 +127,12 @@ public class AnnotationMetadata {
 
         if (annotation == null) {
             // no annotation
-            finalName = MetricRegistry.name(bean.getName(), memberName(member));
+            finalName = MetricRegistry.name(member.getDeclaringClass(), memberName(member));
         } else if (fromElement) {
             // annotated member
             finalName = (name.isEmpty()) ? memberName(member) : name;
             if (!absolute) {
-                finalName = MetricRegistry.name(bean.getName(), finalName);
+                finalName = MetricRegistry.name(member.getDeclaringClass(), finalName);
             }
         } else {
             // annotated class
