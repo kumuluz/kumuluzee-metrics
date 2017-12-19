@@ -22,10 +22,7 @@ package com.kumuluz.ee.metrics.json.models;
 
 import com.kumuluz.ee.metrics.utils.ServiceConfigInfo;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
+import java.time.Instant;
 
 /**
  * Model used for exporting service metadata.
@@ -35,18 +32,14 @@ import java.util.TimeZone;
  */
 public class Service {
 
-    private final TimeZone tz = TimeZone.getTimeZone("UTC");
-    private final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.S'Z'");
-
-    private String timestamp;
+    private Instant timestamp;
     private String environment;
     private String name;
     private String version;
     private String instance;
 
     public Service() {
-        df.setTimeZone(tz);
-        this.timestamp = df.format(new Date());
+        this.timestamp = Instant.now();
         this.environment = ServiceConfigInfo.getInstance().getEnvironment();
         this.name = ServiceConfigInfo.getInstance().getServiceName();
         this.version = ServiceConfigInfo.getInstance().getServiceVersion();
@@ -54,7 +47,7 @@ public class Service {
     }
 
     public String getTimestamp() {
-        return timestamp;
+        return timestamp.toString();
     }
 
     public String getEnvironment() {
