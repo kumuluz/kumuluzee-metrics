@@ -30,9 +30,9 @@
 
         <kumuluzee.version>2.4.1</kumuluzee.version>
 
+        <microprofile-metrics.version>1.0</microprofile-metrics.version>
         <dropwizard-metrics.version>3.2.4</dropwizard-metrics.version>
         <jackson.version>2.8.10</jackson.version>
-        <microprofile-metrics.version>1.0</microprofile-metrics.version>
 
         <maven-compiler-plugin.version>3.6.1</maven-compiler-plugin.version>
         <nexus.staging.plugin.version>1.6.8</nexus.staging.plugin.version>
@@ -91,7 +91,7 @@
             <dependency>
                 <groupId>com.kumuluz.ee.metrics</groupId>
                 <artifactId>kumuluzee-metrics-core</artifactId>
-                <version>1.0.0-SNAPSHOT</version>
+                <version>${project.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

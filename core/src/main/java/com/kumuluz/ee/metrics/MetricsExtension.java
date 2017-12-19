@@ -38,6 +38,7 @@ import java.util.logging.Logger;
  * @since 1.0.0
  */
 @EeExtensionDef(name = "MetricsCommons", group = EeExtensionGroup.METRICS)
+@EeComponentDependency(EeComponentType.SERVLET)
 @EeComponentDependency(EeComponentType.CDI)
 public class MetricsExtension implements Extension {
 
