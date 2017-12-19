@@ -28,6 +28,7 @@ import com.codahale.metrics.MetricFilter;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class MetricFilterAdapter implements MetricFilter {
 

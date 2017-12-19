@@ -56,6 +56,7 @@ import java.util.stream.Collectors;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 @ApplicationScoped
 public class MetricsInitiator {

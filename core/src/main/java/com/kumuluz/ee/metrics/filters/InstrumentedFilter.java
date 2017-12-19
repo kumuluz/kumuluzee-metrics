@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class InstrumentedFilter implements Filter {
 

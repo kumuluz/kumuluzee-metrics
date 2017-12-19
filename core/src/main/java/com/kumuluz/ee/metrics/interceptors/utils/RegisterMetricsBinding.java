@@ -28,6 +28,9 @@ import java.lang.annotation.Target;
 
 /**
  * Interceptor binding for beans, containing Timed, Metered and Counted annotations.
+ *
+ * @author Urban Malc
+ * @since 1.0.0
  */
 @InterceptorBinding
 @Retention(RetentionPolicy.RUNTIME)

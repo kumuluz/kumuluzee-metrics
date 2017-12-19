@@ -35,7 +35,9 @@ import java.util.List;
 /**
  * Jackson Module, which contains serializers for MetricRegistry
  *
- * @author Urban Malc, Aljaž Blažej
+ * @author Urban Malc
+ * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class MetricsModule extends Module {
 

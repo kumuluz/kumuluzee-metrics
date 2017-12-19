@@ -36,6 +36,7 @@ import javax.interceptor.Interceptor;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 @Alternative
 @ApplicationScoped

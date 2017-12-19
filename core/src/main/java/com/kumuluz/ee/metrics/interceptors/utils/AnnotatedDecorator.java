@@ -27,6 +27,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Adds additional annotations to Annotated.
+ *
+ * @author Urban Malc
+ * @since 1.0.0
+ */
 public class AnnotatedDecorator implements Annotated {
 
     private final Annotated decorated;

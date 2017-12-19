@@ -27,6 +27,7 @@ import org.eclipse.microprofile.metrics.Counter;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class CounterImpl implements Counter {
 

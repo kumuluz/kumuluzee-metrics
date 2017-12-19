@@ -29,6 +29,7 @@ import java.io.OutputStream;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class SnapshotImpl extends Snapshot {
 

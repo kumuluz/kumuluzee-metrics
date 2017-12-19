@@ -36,6 +36,7 @@ import java.util.logging.Logger;
  *
  * @author Aljaž Blažej
  * @author Urban Malc
+ * @since 1.0.0
  */
 public class LogsSender implements Runnable {
 

@@ -43,6 +43,7 @@ import java.lang.reflect.Modifier;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 @Interceptor
 @RegisterMetricsBinding

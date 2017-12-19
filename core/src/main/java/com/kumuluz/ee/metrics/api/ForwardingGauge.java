@@ -30,6 +30,7 @@ import java.lang.reflect.Method;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class ForwardingGauge implements Gauge {
 

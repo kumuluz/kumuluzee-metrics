@@ -27,6 +27,7 @@ import org.eclipse.microprofile.metrics.Timer;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class ContextImpl implements Timer.Context {
 

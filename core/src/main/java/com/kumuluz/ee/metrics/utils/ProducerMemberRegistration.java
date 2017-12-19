@@ -10,6 +10,7 @@ import javax.enterprise.inject.spi.Bean;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class ProducerMemberRegistration {
 

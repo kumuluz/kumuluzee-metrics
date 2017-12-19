@@ -41,6 +41,7 @@ import java.lang.reflect.Method;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 @Interceptor
 @GaugeBeanBinding

@@ -32,6 +32,7 @@ import java.io.IOException;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class MetadataSerializer extends StdSerializer<Metadata> {
 

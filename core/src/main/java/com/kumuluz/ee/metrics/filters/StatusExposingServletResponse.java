@@ -25,8 +25,11 @@ import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 
 /**
+ * Servlet response that exposes status.
+ *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class StatusExposingServletResponse extends HttpServletResponseWrapper {
     private int httpStatus = 200;

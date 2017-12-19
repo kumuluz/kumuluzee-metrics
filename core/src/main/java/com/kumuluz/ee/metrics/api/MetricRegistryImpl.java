@@ -31,6 +31,7 @@ import java.util.*;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class MetricRegistryImpl extends MetricRegistry {
 

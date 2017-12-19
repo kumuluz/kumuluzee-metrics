@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Aljaž Blažej
  * @author Urban Malc
+ * @since 1.0.0
  */
 @ApplicationScoped
 public class LogsInitiator {

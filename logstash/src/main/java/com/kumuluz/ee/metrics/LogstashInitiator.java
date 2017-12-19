@@ -32,6 +32,7 @@ import javax.enterprise.event.Observes;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 @ApplicationScoped
 public class LogstashInitiator {

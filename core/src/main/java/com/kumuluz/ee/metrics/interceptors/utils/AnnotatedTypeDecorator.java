@@ -29,6 +29,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Adds annotations to AnnotatedType
+ *
+ * @author Urban Malc
+ * @since 1.0.0
+ */
 public class AnnotatedTypeDecorator<X> extends AnnotatedDecorator implements AnnotatedType<X> {
 
     private final AnnotatedType<X> decoratedType;

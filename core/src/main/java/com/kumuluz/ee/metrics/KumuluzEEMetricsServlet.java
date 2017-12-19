@@ -42,7 +42,9 @@ import java.util.*;
 /**
  * Servlet, which exposes metrics in JSON and Prometheus format.
  *
- * @author Urban Malc, Aljaž Blažej
+ * @author Urban Malc
+ * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class KumuluzEEMetricsServlet extends HttpServlet {
 

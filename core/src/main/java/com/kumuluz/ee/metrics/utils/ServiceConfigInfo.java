@@ -29,6 +29,7 @@ import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class ServiceConfigInfo {
 

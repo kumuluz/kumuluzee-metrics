@@ -28,6 +28,9 @@ import java.lang.annotation.Target;
 
 /**
  * Interceptor binding for beans, containing Gauge annotations.
+ *
+ * @author Urban Malc
+ * @since 1.0.0
  */
 @InterceptorBinding
 @Target({ElementType.TYPE})

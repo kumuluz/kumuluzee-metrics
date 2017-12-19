@@ -29,6 +29,7 @@ import java.time.Instant;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class Service {
 

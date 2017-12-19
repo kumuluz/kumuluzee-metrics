@@ -25,6 +25,7 @@ package com.kumuluz.ee.metrics.prometheus;
  *
  * @author Urban Malc
  * @author Aljaž Blažej
+ * @since 1.0.0
  */
 public class Tag {
 
