@@ -35,7 +35,6 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
@@ -46,6 +45,8 @@ import java.util.*;
  * @author Urban Malc, Aljaž Blažej
  */
 public class KumuluzEEMetricsServlet extends HttpServlet {
+
+    private static final String APPLICATION_JSON = "application/json";
 
     private static final String DEBUG_KEY = "kumuluzee.debug";
 
@@ -91,7 +92,7 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
             switch (requestInfo.getRequestType()) {
                 case JSON_METRIC:
                 case JSON_METADATA:
-                    response.setContentType(MediaType.APPLICATION_JSON);
+                    response.setContentType(APPLICATION_JSON);
                     break;
                 case PROMETHEUS:
                     response.setContentType("text/plain; version=0.0.4; charset=utf-8");

@@ -26,7 +26,6 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,6 +36,8 @@ import java.util.Map;
  * @author Aljaž Blažej
  */
 public class RequestInfo {
+
+    private static final String APPLICATION_JSON = "application/json";
 
     private String servletEndpoint;
 
@@ -77,7 +78,7 @@ public class RequestInfo {
     }
 
     private RequestType determineRequestType(HttpServletRequest request) {
-        if(request.getHeader("Accept") != null && request.getHeader("Accept").equals(MediaType.APPLICATION_JSON)) {
+        if(request.getHeader("Accept") != null && request.getHeader("Accept").equals(APPLICATION_JSON)) {
             if(request.getMethod().equals("GET")) {
                 return RequestType.JSON_METRIC;
             } else if(request.getMethod().equals("OPTIONS")) {
