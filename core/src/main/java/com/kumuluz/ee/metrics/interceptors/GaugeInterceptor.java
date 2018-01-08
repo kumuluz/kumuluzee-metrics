@@ -65,8 +65,7 @@ public class GaugeInterceptor {
                     Gauge gauge = applicationRegistry.getGauges().get(metadata.getName());
 
                     if (gauge == null) {
-                        applicationRegistry.register(metadata.getName(), new ForwardingGauge(method,
-                                context.getTarget()), metadata);
+                        applicationRegistry.register(metadata, new ForwardingGauge(method, context.getTarget()));
                     }
                 }
             }

@@ -21,6 +21,7 @@
 package com.kumuluz.ee.metrics.api;
 
 import com.kumuluz.ee.metrics.utils.ServiceConfigInfo;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.*;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -43,11 +44,21 @@ public class MetricRegistryImpl extends MetricRegistry {
 
     @Override
     public <T extends Metric> T register(String name, T t) throws IllegalArgumentException {
-        return register(name, t, new Metadata(name, MetricType.from(t.getClass())));
+        return register(new Metadata(name, MetricType.from(t.getClass())), t);
     }
 
     @Override
+    @Deprecated
     public <T extends Metric> T register(String name, T t, Metadata metadata) throws IllegalArgumentException {
+        Metadata metadataCopy = new Metadata(name, metadata.getDisplayName(), metadata.getDescription(),
+                metadata.getTypeRaw(), metadata.getUnit(), metadata.getTagsAsString());
+        metadataCopy.setReusable(metadata.isReusable());
+        metadataCopy.setName(name);
+        return register(metadataCopy, t);
+    }
+
+    @Override
+    public <T extends Metric> T register(Metadata metadata, T t) throws IllegalArgumentException {
         // add default tags
         ServiceConfigInfo configInfo = ServiceConfigInfo.getInstance();
         if(configInfo.shouldAddToTags()) {
@@ -56,7 +67,25 @@ public class MetricRegistryImpl extends MetricRegistry {
             metadata.addTag("serviceVersion=" + configInfo.getServiceVersion());
             metadata.addTag("instanceId=" + configInfo.getInstanceId());
         }
-        metricRegistry.register(name, new MetricAdapter(t, metadata));
+
+        Optional<String> tagsFromConfig = ConfigProvider.getConfig()
+                .getOptionalValue("MP_METRICS_TAGS", String.class);
+        tagsFromConfig.ifPresent(metadata::addTags);
+
+        try {
+            metricRegistry.register(metadata.getName(), new MetricAdapter(t, metadata));
+        } catch (IllegalArgumentException e) {
+            com.codahale.metrics.Metric m = metricRegistry.getMetrics().get(metadata.getName());
+            if (m instanceof MetricAdapter) {
+                Metadata existingMetadata = ((MetricAdapter) m).getMetadata();
+                if (existingMetadata.isReusable() && metadata.isReusable() &&
+                        existingMetadata.getTypeRaw().equals(metadata.getTypeRaw())) {
+                    return t;
+                } else {
+                    throw e;
+                }
+            }
+        }
         return t;
     }
 
@@ -73,7 +102,7 @@ public class MetricRegistryImpl extends MetricRegistry {
             return (Counter)((MetricAdapter)metrics.get(metadata.getName())).getMetric();
         }
 
-        return register(metadata.getName(), new CounterImpl(), metadata);
+        return register(metadata, new CounterImpl());
     }
 
     @Override
@@ -89,7 +118,7 @@ public class MetricRegistryImpl extends MetricRegistry {
             return (Histogram)((MetricAdapter)metrics.get(metadata.getName())).getMetric();
         }
 
-        return register(metadata.getName(), new HistogramImpl(), metadata);
+        return register(metadata, new HistogramImpl());
     }
 
     @Override
@@ -105,7 +134,7 @@ public class MetricRegistryImpl extends MetricRegistry {
             return (Meter)((MetricAdapter)metrics.get(metadata.getName())).getMetric();
         }
 
-        return register(metadata.getName(), new MeterImpl(), metadata);
+        return register(metadata, new MeterImpl());
     }
 
     @Override
@@ -121,7 +150,7 @@ public class MetricRegistryImpl extends MetricRegistry {
             return (Timer)((MetricAdapter)metrics.get(metadata.getName())).getMetric();
         }
 
-        return register(metadata.getName(), new TimerImpl(), metadata);
+        return register(metadata, new TimerImpl());
     }
 
     @Override

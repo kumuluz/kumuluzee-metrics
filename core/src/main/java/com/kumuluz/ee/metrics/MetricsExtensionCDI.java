@@ -106,8 +106,8 @@ public class MetricsExtensionCDI implements Extension {
         for (ProducerMemberRegistration registration : producerMembers) {
             if (registration.getBean().getQualifiers().contains(DEFAULT) &&
                     !hasInjectionPoints(registration.getMember())) {
-                applicationRegistry.register(registration.getMetadata().getName(), getReference(manager,
-                        registration.getMember().getBaseType(), registration.getBean()), registration.getMetadata());
+                applicationRegistry.register(registration.getMetadata(), getReference(manager,
+                        registration.getMember().getBaseType(), registration.getBean()));
             }
         }
     }

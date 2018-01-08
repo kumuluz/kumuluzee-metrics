@@ -221,7 +221,7 @@ public class MetricsInitiator {
         for (Map.Entry<String, Metric> entry : metricSet.getMetrics().entrySet()) {
             Metadata metadata = metadataMap.get(entry.getKey());
             if(metadata != null) {
-                registry.register(metadata.getName(), convertMetric(entry.getValue(), metadata.getTypeRaw()), metadata);
+                registry.register(metadata, convertMetric(entry.getValue(), metadata.getTypeRaw()));
             }
         }
     }
@@ -236,7 +236,7 @@ public class MetricsInitiator {
                         "-1 if the collection count is undefined for this collector.",
                         MetricType.COUNTER,
                         MetricUnits.NONE);
-                registry.register(metadata.getName(), convertMetric(entry.getValue(), MetricType.COUNTER), metadata);
+                registry.register(metadata, convertMetric(entry.getValue(), MetricType.COUNTER));
             } else if(entry.getKey().endsWith(".time")) {
                 String garbageCollectorName = entry.getKey().substring(0, entry.getKey().lastIndexOf(".time"));
                 Metadata metadata = new Metadata("gc." + garbageCollectorName + ".time",
@@ -249,7 +249,7 @@ public class MetricsInitiator {
                                 "time is very short.",
                         MetricType.GAUGE,
                         MetricUnits.MILLISECONDS);
-                registry.register(metadata.getName(), convertMetric(entry.getValue(), MetricType.GAUGE), metadata);
+                registry.register(metadata, convertMetric(entry.getValue(), MetricType.GAUGE));
             }
         }
     }
@@ -281,50 +281,50 @@ public class MetricsInitiator {
 
     private void registerNonDropwizardMetrics(MetricRegistry registry, Map<String, Metadata> metadataMap) {
         ClassLoadingMXBean classLoadingMXBean = ManagementFactory.getClassLoadingMXBean();
-        registry.register("classloader.currentLoadedClass.count", new ForwardingCounter() {
+        registry.register(metadataMap.get("classloader.currentLoadedClass.count"), new ForwardingCounter() {
                     @Override
                     public long getCount() {
                         return classLoadingMXBean.getLoadedClassCount();
                     }
-                }, metadataMap.get("classloader.currentLoadedClass.count"));
-        registry.register("classloader.totalLoadedClass.count", new ForwardingCounter() {
+                });
+        registry.register(metadataMap.get("classloader.totalLoadedClass.count"), new ForwardingCounter() {
             @Override
             public long getCount() {
                 return classLoadingMXBean.getTotalLoadedClassCount();
             }
-        }, metadataMap.get("classloader.totalLoadedClass.count"));
-        registry.register("classloader.totalUnloadedClass.count", new ForwardingCounter() {
+        });
+        registry.register(metadataMap.get("classloader.totalUnloadedClass.count"), new ForwardingCounter() {
             @Override
             public long getCount() {
                 return classLoadingMXBean.getUnloadedClassCount();
             }
-        }, metadataMap.get("classloader.totalUnloadedClass.count"));
+        });
 
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-        registry.register("thread.count", new ForwardingCounter() {
+        registry.register(metadataMap.get("thread.count"), new ForwardingCounter() {
             @Override
             public long getCount() {
                 return threadMXBean.getThreadCount();
             }
-        }, metadataMap.get("thread.count"));
-        registry.register("thread.daemon.count", new ForwardingCounter() {
+        });
+        registry.register(metadataMap.get("thread.daemon.count"), new ForwardingCounter() {
             @Override
             public long getCount() {
                 return threadMXBean.getDaemonThreadCount();
             }
-        }, metadataMap.get("thread.daemon.count"));
-        registry.register("thread.max.count", new ForwardingCounter() {
+        });
+        registry.register(metadataMap.get("thread.max.count"), new ForwardingCounter() {
             @Override
             public long getCount() {
                 return threadMXBean.getPeakThreadCount();
             }
-        }, metadataMap.get("thread.max.count"));
+        });
 
         OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
-        registry.register("cpu.availableProcessors", (Gauge<Integer>) operatingSystemMXBean::getAvailableProcessors,
-                metadataMap.get("cpu.availableProcessors"));
-        registry.register("cpu.systemLoadAverage", (Gauge<Double>) operatingSystemMXBean::getSystemLoadAverage,
-                metadataMap.get("cpu.systemLoadAverage"));
+        registry.register(metadataMap.get("cpu.availableProcessors"),
+                (Gauge<Integer>) operatingSystemMXBean::getAvailableProcessors);
+        registry.register(metadataMap.get("cpu.systemLoadAverage"), (Gauge<Double>)
+                operatingSystemMXBean::getSystemLoadAverage);
     }
 
     private List<Integer> parseStatusCodes(String codes) {

@@ -74,6 +74,7 @@ public class AnnotationMetadata {
         String displayName = "";
         String description = "";
         String unit = MetricUnits.NONE;
+        boolean reusable = false;
         if (Counted.class.isInstance(annotation)) {
             Counted a = (Counted)annotation;
             type = MetricType.COUNTER;
@@ -83,6 +84,7 @@ public class AnnotationMetadata {
             displayName = a.displayName();
             description = a.description();
             unit = a.unit();
+            reusable = a.reusable();
         } else if (Timed.class.isInstance(annotation)) {
             Timed a = (Timed)annotation;
             type = MetricType.TIMER;
@@ -92,6 +94,7 @@ public class AnnotationMetadata {
             displayName = a.displayName();
             description = a.description();
             unit = a.unit();
+            reusable = a.reusable();
         } else if (Metered.class.isInstance(annotation)) {
             Metered a = (Metered)annotation;
             type = MetricType.METERED;
@@ -101,6 +104,7 @@ public class AnnotationMetadata {
             displayName = a.displayName();
             description = a.description();
             unit = a.unit();
+            reusable = a.reusable();
         } else if (Gauge.class.isInstance(annotation)) {
             Gauge a = (Gauge)annotation;
             type = MetricType.GAUGE;
@@ -149,6 +153,7 @@ public class AnnotationMetadata {
         metadata.setDisplayName(displayName);
         metadata.setDescription(description);
         metadata.setUnit(unit);
+        metadata.setReusable(reusable);
 
         return metadata;
     }
@@ -166,18 +171,10 @@ public class AnnotationMetadata {
     }
 
     private static <E extends Member> MetricType getMetricType(E element) {
-        if (element instanceof Counter) {
-            return MetricType.COUNTER;
-        } else if (element instanceof Histogram) {
-            return MetricType.HISTOGRAM;
-        } else if (element instanceof org.eclipse.microprofile.metrics.Gauge) {
-            return MetricType.GAUGE;
-        } else if (element instanceof Timer) {
-            return MetricType.TIMER;
-        } else if (element instanceof Meter) {
-            return MetricType.METERED;
+        if (element instanceof Field) {
+            return MetricType.from(((Field) element).getType());
+        } else {
+            return MetricType.from(element.getClass());
         }
-
-        return MetricType.INVALID;
     }
 }

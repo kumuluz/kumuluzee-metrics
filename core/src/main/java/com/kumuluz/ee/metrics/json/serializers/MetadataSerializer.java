@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.eclipse.microprofile.metrics.Metadata;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Serializer for Microprofile Metadata.
@@ -47,7 +48,24 @@ public class MetadataSerializer extends StdSerializer<Metadata> {
         json.writeStringField("type", metadata.getType());
         json.writeStringField("description", metadata.getDescription());
         json.writeStringField("displayName", metadata.getDisplayName());
-        json.writeStringField("tags", metadata.getTagsAsString());
+        json.writeStringField("tags", getTagsAsStringNoQuotes(metadata.getTags()));
         json.writeEndObject();
+    }
+
+    private static String getTagsAsStringNoQuotes(Map<String, String> tags) {
+        StringBuilder sb = new StringBuilder();
+
+        boolean first = true;
+        for (Map.Entry<String, String> entry : tags.entrySet()) {
+            if (!first) {
+                sb.append(",");
+            } else {
+                first = false;
+            }
+
+            sb.append(entry.getKey()).append("=").append(entry.getValue());
+        }
+
+        return sb.toString();
     }
 }

@@ -77,12 +77,11 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
     }
 
     @Override
-    public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void service(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         RequestInfo requestInfo = new RequestInfo(request);
 
-        if(requestInfo.getRequestType() == RequestInfo.RequestType.INVALID ||
-                !jsonServletEnabled && (
+        if(!jsonServletEnabled && (
                 requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METADATA ||
                 requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METRIC)) {
             response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
@@ -160,7 +159,7 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
                 }
             }
         } else {
-            response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+            response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
         }
     }
 
