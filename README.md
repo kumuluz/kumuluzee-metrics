@@ -16,8 +16,7 @@ of application specific metrics, as described below.
 The implementation is based on Dropwizard metrics. More information about their implementation can be found on
 [github](https://github.com/dropwizard/metrics) or their [official page](http://metrics.dropwizard.io).
 
-We are working on making KumuluzEE Metrics fully compliant with MicroProfile Metrics. This is a development version and
-may not be fully stable.
+KumuluzEE Metrics is fully compliant with MicroProfile Metrics 1.1.
 
 ## Usage
 
@@ -158,13 +157,20 @@ Alongside metric's name, the following metadata is stored for each metric:
 - `description` - A human readable description. Default: `""`.
 - `unit` - Unit of the metric. Default: `MetricUnits.NONE`.
 - `tags` - Tags of the metric.
+- `reusable` - Is the metric reusable. If `false`, the metric can not be registered more than once with the same name
+  and scope. This is done to prevent hard to spot copy & paste errors. If this behaviour is required, all such metrics
+  should have the `reusable` flag set to true. Default: `false`.
 
 Metadata is specified using annotation parameters in `@Metric`, `@Gauge`, `@Counted`, `@Metered` and `@Timed`
 annotations.
 
 ### Metric tags
 
-Global metrics tags can be added by specifying them in the `MP_METRICS_TAGS` environment variable:
+Global metrics tags can be added by specifying them in the `MP_METRICS_TAGS` MicroProfile Config property. Since
+MicroProfile Config translates configuration sources to the KumuluzEE Configuration, the `MP_METRICS_TAGS` property can
+be defined in any KumuluzEE configuration source as well.
+
+Example of specifying tags in an environment variable:
 
 ```bash
 $ export MP_METRICS_TAGS=app=shop,tier=integration
@@ -185,6 +191,7 @@ Metric registries are used for grouping metrics. All metrics from annotated meth
 registry called `application`.
 
 The `base` registry contains metrics, defined in the Microprofile Metrics specification.
+(see [Base metrics](#base-metrics))
 
 To register a metric in the `application` registry, use the following code:
 
@@ -237,13 +244,14 @@ memory consumption and thread counts.
 
 ## Servlet
 
-The common module includes a servlet, that exposes all the metrics in a json format. The server is enabled by default
+The common module includes a servlet, that exposes all the metrics in JSON format. The server is enabled by default
 and can be configured using following configuration keys:
 - `kumuluzee.metrics.servlet.enabled`: Is the servlet enabled. Default value is `true`.
 - `kumuluzee.metrics.servlet.mapping`: URL on which the metrics are exposed. Default value is `/metrics/*`.
 
-The servlet can only be accessed if the environment is set to `dev` or if the debug value is set to `true`.
-You can also enable or disable the servlet during runtime by changing the debug value in the etcd.
+The servlet can only be accessed if the environment is set to `dev` (default) or if the `kumuluzee.debug` configuration
+key is set to `true`.
+You can also enable or disable the servlet during runtime by changing the debug configuration key.
 
 Example of the configuration:
 
@@ -386,7 +394,7 @@ following information about the service should be defined with the common config
 - `kumuluzee.version`: Version of the service.
 - `kumuluzee.env.name`: Name of the environment in which service is deployed.
 
-Example if the metrics configuration is shown below:
+Example of the metrics configuration is shown below:
 
 ```yaml
 kumuluzee:
@@ -423,6 +431,8 @@ Logs reporter can be configured using the following configuration keys:
 - `kumuluzee.metrics.logs.period-s`: Period in seconds, on which metrics are logged. The default value is `60`.
 - `kumuluzee.metrics.logs.level`: Logging level. Default value is `FINE`.
 
+Example of the Logs reporter configuration:
+
 ```yaml
 kumuluzee:
     metrics:
@@ -431,7 +441,7 @@ kumuluzee:
             level: INFO
 ```
 
-The metrics are logged in the same json format as exposed by the servlet.
+The metrics are logged in the same JSON format as exposed by the servlet GET method.
 
 ### Logstash
 
@@ -451,6 +461,8 @@ Logstash reporter can be configured using the following configuration keys:
 - `kumuluzee.metrics.logstash.port`: Port on which the Logstash server listens. Default value is `5000`.
 - `kumuluzee.metrics.logstash.period-s`: Period in seconds, on which metrics are reported to Logstash. Default value is
   `60`.
+
+Example of the Logstash reporter configuration:
 
 ```yaml
 kumuluzee:
