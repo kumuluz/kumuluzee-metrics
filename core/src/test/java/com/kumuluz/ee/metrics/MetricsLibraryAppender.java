@@ -29,7 +29,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
  * Packages KumuluzEE Metrics library as a ShrinkWrap archive and adds it to deployments.
  *
  * @author Urban Malc
- * @since 1.0.0
+ * @since 1.1.0
  */
 public class MetricsLibraryAppender extends CachedAuxilliaryArchiveAppender {
 

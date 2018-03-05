@@ -27,7 +27,7 @@ import org.jboss.arquillian.core.spi.LoadableExtension;
  * Registers {@link MetricsLibraryAppender} with the Arquillian.
  *
  * @author Urban Malc
- * @since 1.0.0
+ * @since 1.1.0
  */
 public class MetricsArquillianExtension implements LoadableExtension {
 
