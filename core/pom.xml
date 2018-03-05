@@ -90,7 +90,7 @@
         <dependency>
             <groupId>com.kumuluz.ee.testing</groupId>
             <artifactId>kumuluzee-arquillian-container</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${kumuluzee-arquillian-container.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
