@@ -29,7 +29,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <kumuluzee.version>2.5.3</kumuluzee.version>
-        <kumuluzee-config-mp.version>1.1.0</kumuluzee-config-mp.version>
+        <kumuluzee-config-mp.version>1.1.1</kumuluzee-config-mp.version>
 
         <microprofile-metrics.version>1.1.1</microprofile-metrics.version>
         <dropwizard-metrics.version>3.2.4</dropwizard-metrics.version>
