@@ -35,7 +35,7 @@ import java.util.ResourceBundle;
 public class DependencyAppender implements MavenDependencyAppender {
 
     private static final ResourceBundle versionsBundle = ResourceBundle
-            .getBundle("META-INF/kumuluzee/arquillian-versions");
+            .getBundle("META-INF/kumuluzee/metrics/versions");
 
     @Override
     public List<String> addLibraries() {
