@@ -37,7 +37,7 @@ There are several different measuring tools available:
 - Counter: measures an integer, which can increase and decrease
 - Histogram: measures the distribution of values in a stream of data
 - Meter: measures the rate at which a set of events occur
-- Timer: measures a histogram of the duration of a type of event and a meter of the rate of its occurance
+- Timer: measures a histogram of the duration of a type of event and a meter of the rate of its occurrence
 
 ### Gauge
 
