@@ -26,9 +26,11 @@ import org.eclipse.microprofile.metrics.*;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 /**
  * Filter used for web instrumentation.
@@ -39,8 +41,8 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class InstrumentedFilter implements Filter {
 
-    private List<Integer> meterStatusCodes;
-    private String instrumentationName;
+    public static final String PARAM_INSTRUMENTATION_NAME = InstrumentedFilter.class.getName() + ".instrumentationName";
+    public static final String PARAM_METER_STATUS_CODES = InstrumentedFilter.class.getName() + ".meterStatusCodes";
 
     private ConcurrentMap<Integer, Meter> metersByStatusCode;
     private Meter otherMeter;
@@ -49,54 +51,55 @@ public class InstrumentedFilter implements Filter {
     private Counter activeRequests;
     private Timer requestTimer;
 
-
-    public InstrumentedFilter(String instrumentationName, List<Integer> meterStatusCodes) {
-        this.instrumentationName = instrumentationName;
-        this.meterStatusCodes = meterStatusCodes;
-    }
-
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
+
+        String instrumentationName = filterConfig.getInitParameter(PARAM_INSTRUMENTATION_NAME);
+        List<Integer> meterStatusCodes = Arrays.stream(
+                filterConfig.getInitParameter(PARAM_METER_STATUS_CODES).split(","))
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
+
         MetricRegistry metricsRegistry = MetricRegistryProducer.getVendorRegistry();
 
         String metricPrefix = "webInstrumentation." + instrumentationName;
 
         this.metersByStatusCode = new ConcurrentHashMap<>(meterStatusCodes.size());
-        for (Integer sc : this.meterStatusCodes) {
+        for (Integer sc : meterStatusCodes) {
             Metadata meterMetadata = new Metadata(MetricRegistry.name(metricPrefix, "status", sc.toString()),
-                    sc + " responses on " + this.instrumentationName,
-                    "Number of responses with status code " + sc + " on " + this.instrumentationName,
+                    sc + " responses on " + instrumentationName,
+                    "Number of responses with status code " + sc + " on " + instrumentationName,
                     MetricType.METERED, MetricUnits.NONE);
             metersByStatusCode.put(sc, metricsRegistry.meter(meterMetadata));
         }
 
         Metadata otherMetadata = new Metadata(MetricRegistry.name(metricPrefix, "status", "other"),
-                "Other responses on " + this.instrumentationName,
-                "Number of responses with other status codes on " + this.instrumentationName,
+                "Other responses on " + instrumentationName,
+                "Number of responses with other status codes on " + instrumentationName,
                 MetricType.METERED, MetricUnits.NONE);
         this.otherMeter = metricsRegistry.meter(otherMetadata);
 
         Metadata timeoutsMetadata = new Metadata(MetricRegistry.name(metricPrefix, "timeouts"),
-                "Timeouts on " + this.instrumentationName,
-                "Number of timeouts on " + this.instrumentationName,
+                "Timeouts on " + instrumentationName,
+                "Number of timeouts on " + instrumentationName,
                 MetricType.METERED, MetricUnits.NONE);
         this.timeoutsMeter = metricsRegistry.meter(timeoutsMetadata);
 
         Metadata errorsMetadata = new Metadata(MetricRegistry.name(metricPrefix, "errors"),
-                "Errors on " + this.instrumentationName,
-                "Number of errors on " + this.instrumentationName,
+                "Errors on " + instrumentationName,
+                "Number of errors on " + instrumentationName,
                 MetricType.METERED, MetricUnits.NONE);
         this.errorsMeter = metricsRegistry.meter(errorsMetadata);
 
         Metadata activeRequestsMetadata = new Metadata(MetricRegistry.name(metricPrefix, "activeRequests"),
-                "Active requests on " + this.instrumentationName,
-                "Number of active requests on " + this.instrumentationName,
+                "Active requests on " + instrumentationName,
+                "Number of active requests on " + instrumentationName,
                 MetricType.METERED, MetricUnits.NONE);
         this.activeRequests = metricsRegistry.counter(activeRequestsMetadata);
 
         Metadata timerMetadata = new Metadata(MetricRegistry.name(metricPrefix, "response"),
-                this.instrumentationName + " response timer",
-                "Response timer for " + this.instrumentationName,
+                instrumentationName + " response timer",
+                "Response timer for " + instrumentationName,
                 MetricType.TIMER, MetricUnits.NANOSECONDS);
         this.requestTimer = metricsRegistry.timer(timerMetadata);
 

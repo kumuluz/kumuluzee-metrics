@@ -23,11 +23,9 @@ package com.kumuluz.ee.metrics;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import com.kumuluz.ee.metrics.json.MetricsModule;
 import com.kumuluz.ee.metrics.prometheus.PrometheusMetricWriter;
 import com.kumuluz.ee.metrics.utils.RequestInfo;
-import com.kumuluz.ee.metrics.utils.ServiceConfigInfo;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -37,7 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.Collections;
 
 /**
  * Servlet, which exposes metrics in JSON and Prometheus format.
@@ -50,12 +48,8 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
 
     private static final String APPLICATION_JSON = "application/json";
 
-    private static final String DEBUG_KEY = "kumuluzee.debug";
-
     private ObjectMapper metricMapper;
     private ObjectMapper metadataMapper;
-
-    private boolean jsonServletEnabled;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -63,30 +57,12 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
 
         this.metricMapper = new ObjectMapper().registerModule(new MetricsModule(false));
         this.metadataMapper = new ObjectMapper().registerModule(new MetricsModule(true));
-
-        this.jsonServletEnabled = true;
-        if(!"dev".equalsIgnoreCase(ServiceConfigInfo.getInstance().getEnvironment())) {
-            ConfigurationUtil configurationUtil = ConfigurationUtil.getInstance();
-            this.jsonServletEnabled = configurationUtil.getBoolean(DEBUG_KEY).orElse(false);
-            configurationUtil.subscribe(DEBUG_KEY, (String key, String value) -> {
-                if (DEBUG_KEY.equals(key)) {
-                    jsonServletEnabled = "true".equalsIgnoreCase(value.toLowerCase());
-                }
-            });
-        }
     }
 
     @Override
     public void service(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         RequestInfo requestInfo = new RequestInfo(request);
-
-        if(!jsonServletEnabled && (
-                requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METADATA ||
-                requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METRIC)) {
-            response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-            return;
-        }
 
         if(requestInfo.getRequestType() != RequestInfo.RequestType.INVALID) {
 
