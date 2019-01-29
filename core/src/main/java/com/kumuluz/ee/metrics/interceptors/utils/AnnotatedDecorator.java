@@ -65,6 +65,18 @@ public class AnnotatedDecorator implements Annotated {
     }
 
     @Override
+    public <T extends Annotation> Set<T> getAnnotations(Class<T> aClass) {
+        Set<T> annotations = new HashSet<>(decorated.getAnnotations(aClass));
+
+        T annotation = getDecoratingAnnotation(aClass);
+        if (annotation != null) {
+            annotations.add(annotation);
+        }
+
+        return Collections.unmodifiableSet(annotations);
+    }
+
+    @Override
     public Set<Annotation> getAnnotations() {
         Set<Annotation> annotations = new HashSet<>(this.annotations);
         annotations.addAll(decorated.getAnnotations());
@@ -76,6 +88,7 @@ public class AnnotatedDecorator implements Annotated {
         return getDecoratingAnnotation(annotationType) != null || decorated.isAnnotationPresent(annotationType);
     }
 
+    @SuppressWarnings("unchecked")
     private <T extends Annotation> T getDecoratingAnnotation(Class<T> annotationType) {
         for (Annotation annotation : annotations) {
             if (annotationType.isAssignableFrom(annotation.annotationType())) {
