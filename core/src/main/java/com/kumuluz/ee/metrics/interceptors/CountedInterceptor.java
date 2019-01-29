@@ -52,9 +52,12 @@ public class CountedInterceptor {
     @Inject
     private MetricRegistry applicationRegistry;
 
-    @Inject
-    @Intercepted
     private Bean<?> bean;
+
+    @Inject
+    private CountedInterceptor(@Intercepted Bean<?> bean) {
+        this.bean = bean;
+    }
 
     @AroundConstruct
     private Object countedConstructor(InvocationContext context) throws Exception {

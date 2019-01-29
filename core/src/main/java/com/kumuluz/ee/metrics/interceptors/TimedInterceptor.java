@@ -52,9 +52,12 @@ public class TimedInterceptor {
     @Inject
     private MetricRegistry applicationRegistry;
 
-    @Inject
-    @Intercepted
     private Bean<?> bean;
+
+    @Inject
+    private TimedInterceptor(@Intercepted Bean<?> bean) {
+        this.bean = bean;
+    }
 
     @AroundConstruct
     private Object timedConstructor(InvocationContext context) throws Exception {

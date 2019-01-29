@@ -52,10 +52,12 @@ public class MeteredInterceptor {
     @Inject
     private MetricRegistry applicationRegistry;
 
-    @Inject
-    @Intercepted
     private Bean<?> bean;
 
+    @Inject
+    private MeteredInterceptor(@Intercepted Bean<?> bean) {
+        this.bean = bean;
+    }
 
     @AroundConstruct
     private Object meteredConstructor(InvocationContext context) throws Exception {
