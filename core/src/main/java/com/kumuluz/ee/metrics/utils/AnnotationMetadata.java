@@ -30,6 +30,10 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Metadata Builders.
@@ -39,6 +43,8 @@ import java.util.Arrays;
  * @since 1.0.0
  */
 public class AnnotationMetadata {
+
+    private static final Logger LOG = Logger.getLogger(AnnotationMetadata.class.getName());
 
     public static <E extends AnnotatedElement, T extends Annotation> T getAnnotation
             (Class<?> bean, E element, Class<T> annotationClass) {
@@ -149,6 +155,14 @@ public class AnnotationMetadata {
         }
 
         Metadata metadata = new Metadata(finalName, type);
+        List<String> missingEqualSign = Arrays.stream(tags)
+                .filter(tag -> tag != null && !tag.isEmpty() && !tag.contains("="))
+                .collect(Collectors.toList());
+        if (!missingEqualSign.isEmpty()) {
+            LOG.log(Level.WARNING, String.format("Annotation %s at %s#%s has tags that don't contain equal sign (=)." +
+                    "They will be ignored. [%s]", type, bean.getName(), member.getName(),
+                    String.join(",", missingEqualSign)));
+        }
         Arrays.stream(tags).forEach(metadata::addTag);
         metadata.setDisplayName(displayName);
         metadata.setDescription(description);

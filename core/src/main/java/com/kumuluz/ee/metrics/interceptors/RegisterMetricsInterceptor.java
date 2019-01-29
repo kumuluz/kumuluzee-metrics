@@ -20,6 +20,9 @@
  */
 package com.kumuluz.ee.metrics.interceptors;
 
+import com.kumuluz.ee.metrics.api.CounterImpl;
+import com.kumuluz.ee.metrics.api.MeterImpl;
+import com.kumuluz.ee.metrics.api.TimerImpl;
 import com.kumuluz.ee.metrics.interceptors.utils.RegisterMetricsBinding;
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -37,6 +40,8 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Interceptor for registering Timed, Metered and Counted annotations on bean construct.
@@ -49,6 +54,8 @@ import java.lang.reflect.Modifier;
 @RegisterMetricsBinding
 @Priority(Interceptor.Priority.LIBRARY_BEFORE - 10)
 public class RegisterMetricsInterceptor {
+
+    private static final Set<Member> processedElements = new HashSet<>();
 
     @Inject
     private MetricRegistry registry;
@@ -71,18 +78,25 @@ public class RegisterMetricsInterceptor {
         return context.proceed();
     }
 
-    private <E extends Member & AnnotatedElement> void registerMetrics(Class<?> bean, E element) {
+    private synchronized <E extends Member & AnnotatedElement> void registerMetrics(Class<?> bean, E element) {
+
+        if (processedElements.contains(element)) {
+            return;
+        }
+
         if (AnnotationMetadata.getAnnotation(bean, element, Counted.class) != null) {
             Metadata m = AnnotationMetadata.buildMetadata(bean, element, Counted.class);
-            registry.counter(m);
+            registry.register(m, new CounterImpl());
         }
         if (AnnotationMetadata.getAnnotation(bean, element, Timed.class) != null) {
             Metadata m = AnnotationMetadata.buildMetadata(bean, element, Timed.class);
-            registry.timer(m);
+            registry.register(m, new TimerImpl());
         }
         if (AnnotationMetadata.getAnnotation(bean, element, Metered.class) != null) {
             Metadata m = AnnotationMetadata.buildMetadata(bean, element, Metered.class);
-            registry.meter(m);
+            registry.register(m, new MeterImpl());
         }
+
+        processedElements.add(element);
     }
 }
