@@ -17,11 +17,6 @@
             <artifactId>kumuluzee-cdi-weld</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>com.kumuluz.ee.config</groupId>
-            <artifactId>kumuluzee-config-mp</artifactId>
-            <version>${kumuluzee-config-mp.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>

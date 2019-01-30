@@ -20,10 +20,10 @@
 */
 package com.kumuluz.ee.metrics.api;
 
+import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import com.kumuluz.ee.metrics.utils.ServiceConfigInfo;
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.metrics.*;
 import org.eclipse.microprofile.metrics.Timer;
+import org.eclipse.microprofile.metrics.*;
 
 import java.util.*;
 
@@ -68,8 +68,7 @@ public class MetricRegistryImpl extends MetricRegistry {
             metadata.addTag("instanceId=" + configInfo.getInstanceId());
         }
 
-        Optional<String> tagsFromConfig = ConfigProvider.getConfig()
-                .getOptionalValue("MP_METRICS_TAGS", String.class);
+        Optional<String> tagsFromConfig = ConfigurationUtil.getInstance().get("MP_METRICS_TAGS");
         tagsFromConfig.ifPresent(metadata::addTags);
 
         try {
