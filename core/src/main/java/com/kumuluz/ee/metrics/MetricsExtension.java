@@ -17,7 +17,7 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics;
 
 import com.codahale.metrics.Counter;
@@ -29,10 +29,7 @@ import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.kumuluz.ee.common.Extension;
 import com.kumuluz.ee.common.ServletServer;
 import com.kumuluz.ee.common.config.EeConfig;
-import com.kumuluz.ee.common.dependencies.EeComponentDependency;
-import com.kumuluz.ee.common.dependencies.EeComponentType;
-import com.kumuluz.ee.common.dependencies.EeExtensionDef;
-import com.kumuluz.ee.common.dependencies.EeExtensionGroup;
+import com.kumuluz.ee.common.dependencies.*;
 import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import com.kumuluz.ee.metrics.api.CounterImpl;
@@ -60,8 +57,10 @@ import java.util.stream.Collectors;
  * @since 1.0.0
  */
 @EeExtensionDef(name = "MetricsCommons", group = EeExtensionGroup.METRICS)
-@EeComponentDependency(EeComponentType.SERVLET)
-@EeComponentDependency(EeComponentType.CDI)
+@EeComponentDependencies({
+        @EeComponentDependency(EeComponentType.SERVLET),
+        @EeComponentDependency(EeComponentType.CDI)
+})
 public class MetricsExtension implements Extension {
 
     private static final Logger log = Logger.getLogger(MetricsExtension.class.getName());
@@ -233,15 +232,15 @@ public class MetricsExtension implements Extension {
                                            Map<String, Metadata> metadataMap) {
         for (Map.Entry<String, Metric> entry : metricSet.getMetrics().entrySet()) {
             Metadata metadata = metadataMap.get(entry.getKey());
-            if(metadata != null) {
+            if (metadata != null) {
                 registry.register(metadata, convertMetric(entry.getValue(), metadata.getTypeRaw()));
             }
         }
     }
 
     private void registerDropwizardGcMetrics(MetricRegistry registry, GarbageCollectorMetricSet metricSet) {
-        for(Map.Entry<String, Metric> entry : metricSet.getMetrics().entrySet()) {
-            if(entry.getKey().endsWith(".count")) {
+        for (Map.Entry<String, Metric> entry : metricSet.getMetrics().entrySet()) {
+            if (entry.getKey().endsWith(".count")) {
                 String garbageCollectorName = entry.getKey().substring(0, entry.getKey().lastIndexOf(".count"));
                 Metadata metadata = new Metadata("gc." + garbageCollectorName + ".count",
                         "Garbage Collection Count",
@@ -250,7 +249,7 @@ public class MetricsExtension implements Extension {
                         MetricType.COUNTER,
                         MetricUnits.NONE);
                 registry.register(metadata, convertMetric(entry.getValue(), MetricType.COUNTER));
-            } else if(entry.getKey().endsWith(".time")) {
+            } else if (entry.getKey().endsWith(".time")) {
                 String garbageCollectorName = entry.getKey().substring(0, entry.getKey().lastIndexOf(".time"));
                 Metadata metadata = new Metadata("gc." + garbageCollectorName + ".time",
                         "Garbage Collection Time",
@@ -268,20 +267,20 @@ public class MetricsExtension implements Extension {
     }
 
     private org.eclipse.microprofile.metrics.Metric convertMetric(Metric metric, MetricType type) {
-        if(metric instanceof Counter) {
-            return new CounterImpl((Counter)metric);
-        } else if(metric instanceof com.codahale.metrics.Histogram) {
+        if (metric instanceof Counter) {
+            return new CounterImpl((Counter) metric);
+        } else if (metric instanceof com.codahale.metrics.Histogram) {
             return new HistogramImpl((com.codahale.metrics.Histogram) metric);
-        } else if(metric instanceof com.codahale.metrics.Meter) {
+        } else if (metric instanceof com.codahale.metrics.Meter) {
             return new MeterImpl((com.codahale.metrics.Meter) metric);
-        } else if(metric instanceof com.codahale.metrics.Timer) {
+        } else if (metric instanceof com.codahale.metrics.Timer) {
             return new TimerImpl((com.codahale.metrics.Timer) metric);
-        } else if(metric instanceof com.codahale.metrics.Gauge) {
-            if(type == MetricType.COUNTER) {
+        } else if (metric instanceof com.codahale.metrics.Gauge) {
+            if (type == MetricType.COUNTER) {
                 return new ForwardingCounter() {
                     @Override
                     public long getCount() {
-                        return ((Number)((com.codahale.metrics.Gauge) metric).getValue()).longValue();
+                        return ((Number) ((com.codahale.metrics.Gauge) metric).getValue()).longValue();
                     }
                 };
             } else {
