@@ -17,9 +17,10 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.utils;
 
+import com.kumuluz.ee.common.config.EeConfig;
 import com.kumuluz.ee.metrics.producers.MetricRegistryProducer;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
@@ -73,22 +74,22 @@ public class RequestInfo {
         this.metadata = null;
 
         this.requestType = determineRequestType(request);
-        if(this.requestType != RequestType.INVALID) {
+        if (this.requestType != RequestType.INVALID) {
             determineRequestedMetrics(request.getRequestURI());
         }
     }
 
     private RequestType determineRequestType(HttpServletRequest request) {
-        if(request.getHeader("Accept") != null && request.getHeader("Accept").equals(APPLICATION_JSON)) {
-            if(request.getMethod().equals("GET")) {
+        if (request.getHeader("Accept") != null && request.getHeader("Accept").equals(APPLICATION_JSON)) {
+            if (request.getMethod().equals("GET")) {
                 return RequestType.JSON_METRIC;
-            } else if(request.getMethod().equals("OPTIONS")) {
+            } else if (request.getMethod().equals("OPTIONS")) {
                 return RequestType.JSON_METADATA;
             } else {
                 return RequestType.INVALID;
             }
         } else {
-            if(request.getMethod().equals("GET")) {
+            if (request.getMethod().equals("GET")) {
                 return RequestType.PROMETHEUS;
             } else {
                 return RequestType.INVALID;
@@ -98,41 +99,43 @@ public class RequestInfo {
 
     private void determineRequestedMetrics(String uri) {
         // remove servlet endpoint from uri to get REST parts
-        String[] splittedUri = uri.substring(servletEndpoint.length()).split("/");
+        String[] splittedUri = uri
+                .substring(EeConfig.getInstance().getServer().getContextPath().length() + servletEndpoint.length())
+                .split("/");
 
         metricsRequested = MetricsRequested.ALL;
-        if(splittedUri.length > 1) {
+        if (splittedUri.length > 1) {
             metricsRequested = MetricsRequested.REGISTRY;
             MetricRegistry registry = parseRegistry(splittedUri[1]);
-            if(registry == null) {
+            if (registry == null) {
                 metricsRequested = MetricsRequested.NOT_FOUND;
                 return;
             }
-            if(registry.getMetrics().size() == 0) {
+            if (registry.getMetrics().size() == 0) {
                 metricsRequested = MetricsRequested.NO_CONTENT;
                 return;
             }
             requestedRegistries.put(splittedUri[1], registry);
         }
-        if(splittedUri.length > 2 && getSingleRequestedRegistry() != null) {
+        if (splittedUri.length > 2 && getSingleRequestedRegistry() != null) {
             metricsRequested = MetricsRequested.METRIC;
             metricName = splittedUri[2];
-            if(requestType.equals(RequestType.JSON_METADATA)) {
+            if (requestType.equals(RequestType.JSON_METADATA)) {
                 metadata = getSingleRequestedRegistry().getMetadata().get(metricName);
-                if(metadata == null) {
+                if (metadata == null) {
                     metricsRequested = MetricsRequested.NOT_FOUND;
                     return;
                 }
             } else {
                 metric = getSingleRequestedRegistry().getMetrics().get(metricName);
-                if(metric == null) {
+                if (metric == null) {
                     metricsRequested = MetricsRequested.NOT_FOUND;
                     return;
                 }
             }
         }
 
-        if(metricsRequested == MetricsRequested.ALL) {
+        if (metricsRequested == MetricsRequested.ALL) {
             if (MetricRegistryProducer.getApplicationRegistry().getMetrics().size() > 0) {
                 requestedRegistries.put("application", MetricRegistryProducer.getApplicationRegistry());
             }
@@ -150,11 +153,11 @@ public class RequestInfo {
     }
 
     private MetricRegistry parseRegistry(String name) {
-        if("application".equals(name)) {
+        if ("application".equals(name)) {
             return MetricRegistryProducer.getApplicationRegistry();
-        } else if("base".equals(name)) {
+        } else if ("base".equals(name)) {
             return MetricRegistryProducer.getBaseRegistry();
-        } else if("vendor".equals(name)) {
+        } else if ("vendor".equals(name)) {
             return MetricRegistryProducer.getVendorRegistry();
         }
 
@@ -166,7 +169,7 @@ public class RequestInfo {
     }
 
     public MetricRegistry getSingleRequestedRegistry() {
-        if(requestedRegistries.size() == 1) {
+        if (requestedRegistries.size() == 1) {
             return requestedRegistries.values().iterator().next();
         } else {
             return null;
@@ -174,7 +177,7 @@ public class RequestInfo {
     }
 
     public String getSingleRequestedRegistryName() {
-        if(requestedRegistries.size() == 1) {
+        if (requestedRegistries.size() == 1) {
             return requestedRegistries.keySet().iterator().next();
         } else {
             return null;
