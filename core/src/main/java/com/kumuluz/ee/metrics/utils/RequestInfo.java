@@ -99,8 +99,11 @@ public class RequestInfo {
 
     private void determineRequestedMetrics(String uri) {
         // remove servlet endpoint from uri to get REST parts
+        int contextPathLength = EeConfig.getInstance().getServer().getContextPath().length();
+        if (contextPathLength == 1) contextPathLength = 0;
+
         String[] splittedUri = uri
-                .substring(EeConfig.getInstance().getServer().getContextPath().length() + servletEndpoint.length())
+                .substring(contextPathLength + servletEndpoint.length())
                 .split("/");
 
         metricsRequested = MetricsRequested.ALL;
