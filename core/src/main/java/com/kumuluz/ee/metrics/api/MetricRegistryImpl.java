@@ -58,7 +58,7 @@ public class MetricRegistryImpl extends MetricRegistry {
     }
 
     @Override
-    public <T extends Metric> T register(Metadata metadata, T t) throws IllegalArgumentException {
+    public synchronized <T extends Metric> T register(Metadata metadata, T t) throws IllegalArgumentException {
         // add default tags
         ServiceConfigInfo configInfo = ServiceConfigInfo.getInstance();
         if(configInfo.shouldAddToTags()) {
@@ -94,7 +94,7 @@ public class MetricRegistryImpl extends MetricRegistry {
     }
 
     @Override
-    public Counter counter(Metadata metadata) {
+    public synchronized Counter counter(Metadata metadata) {
         Map<String, com.codahale.metrics.Metric> metrics = metricRegistry.getMetrics();
         if(metrics.containsKey(metadata.getName()) && metrics.get(metadata.getName()) instanceof MetricAdapter
                 && ((MetricAdapter)metrics.get(metadata.getName())).getMetric() instanceof Counter) {
@@ -110,7 +110,7 @@ public class MetricRegistryImpl extends MetricRegistry {
     }
 
     @Override
-    public Histogram histogram(Metadata metadata) {
+    public synchronized Histogram histogram(Metadata metadata) {
         Map<String, com.codahale.metrics.Metric> metrics = metricRegistry.getMetrics();
         if(metrics.containsKey(metadata.getName()) && metrics.get(metadata.getName()) instanceof MetricAdapter
                 && ((MetricAdapter)metrics.get(metadata.getName())).getMetric() instanceof Histogram) {
@@ -126,7 +126,7 @@ public class MetricRegistryImpl extends MetricRegistry {
     }
 
     @Override
-    public Meter meter(Metadata metadata) {
+    public synchronized Meter meter(Metadata metadata) {
         Map<String, com.codahale.metrics.Metric> metrics = metricRegistry.getMetrics();
         if(metrics.containsKey(metadata.getName()) && metrics.get(metadata.getName()) instanceof MetricAdapter
                 && ((MetricAdapter)metrics.get(metadata.getName())).getMetric() instanceof Meter) {
@@ -142,7 +142,7 @@ public class MetricRegistryImpl extends MetricRegistry {
     }
 
     @Override
-    public Timer timer(Metadata metadata) {
+    public synchronized Timer timer(Metadata metadata) {
         Map<String, com.codahale.metrics.Metric> metrics = metricRegistry.getMetrics();
         if(metrics.containsKey(metadata.getName()) && metrics.get(metadata.getName()) instanceof MetricAdapter
                 && ((MetricAdapter)metrics.get(metadata.getName())).getMetric() instanceof Timer) {
