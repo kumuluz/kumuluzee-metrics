@@ -78,25 +78,28 @@ public class RegisterMetricsInterceptor {
         return context.proceed();
     }
 
-    private synchronized <E extends Member & AnnotatedElement> void registerMetrics(Class<?> bean, E element) {
+    private <E extends Member & AnnotatedElement> void registerMetrics(Class<?> bean, E element) {
 
-        if (processedElements.contains(element)) {
-            return;
-        }
+        synchronized (processedElements) {
 
-        if (AnnotationMetadata.getAnnotation(bean, element, Counted.class) != null) {
-            Metadata m = AnnotationMetadata.buildMetadata(bean, element, Counted.class);
-            registry.register(m, new CounterImpl());
-        }
-        if (AnnotationMetadata.getAnnotation(bean, element, Timed.class) != null) {
-            Metadata m = AnnotationMetadata.buildMetadata(bean, element, Timed.class);
-            registry.register(m, new TimerImpl());
-        }
-        if (AnnotationMetadata.getAnnotation(bean, element, Metered.class) != null) {
-            Metadata m = AnnotationMetadata.buildMetadata(bean, element, Metered.class);
-            registry.register(m, new MeterImpl());
-        }
+            if (processedElements.contains(element)) {
+                return;
+            }
 
-        processedElements.add(element);
+            if (AnnotationMetadata.getAnnotation(bean, element, Counted.class) != null) {
+                Metadata m = AnnotationMetadata.buildMetadata(bean, element, Counted.class);
+                registry.register(m, new CounterImpl());
+            }
+            if (AnnotationMetadata.getAnnotation(bean, element, Timed.class) != null) {
+                Metadata m = AnnotationMetadata.buildMetadata(bean, element, Timed.class);
+                registry.register(m, new TimerImpl());
+            }
+            if (AnnotationMetadata.getAnnotation(bean, element, Metered.class) != null) {
+                Metadata m = AnnotationMetadata.buildMetadata(bean, element, Metered.class);
+                registry.register(m, new MeterImpl());
+            }
+
+            processedElements.add(element);
+        }
     }
 }
