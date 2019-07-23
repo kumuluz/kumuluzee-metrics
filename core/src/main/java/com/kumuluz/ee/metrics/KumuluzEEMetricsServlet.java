@@ -17,7 +17,7 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics;
 
 
@@ -48,15 +48,12 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
 
     private static final String APPLICATION_JSON = "application/json";
 
-    private ObjectMapper metricMapper;
-    private ObjectMapper metadataMapper;
+    private static ObjectMapper metricMapper = new ObjectMapper().registerModule(new MetricsModule(false));
+    private static ObjectMapper metadataMapper = new ObjectMapper().registerModule(new MetricsModule(true));
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-
-        this.metricMapper = new ObjectMapper().registerModule(new MetricsModule(false));
-        this.metadataMapper = new ObjectMapper().registerModule(new MetricsModule(true));
     }
 
     @Override
@@ -64,7 +61,7 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
 
         RequestInfo requestInfo = new RequestInfo(request);
 
-        if(requestInfo.getRequestType() != RequestInfo.RequestType.INVALID) {
+        if (requestInfo.getRequestType() != RequestInfo.RequestType.INVALID) {
 
             switch (requestInfo.getRequestType()) {
                 case JSON_METRIC:
@@ -87,7 +84,7 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
 
             response.setHeader("Cache-Control", "must-revalidate,no-cache,no-store");
 
-            if(requestInfo.getRequestType() == RequestInfo.RequestType.PROMETHEUS) {
+            if (requestInfo.getRequestType() == RequestInfo.RequestType.PROMETHEUS) {
                 PrintWriter writer = response.getWriter();
                 PrometheusMetricWriter prometheusMetricWriter = new PrometheusMetricWriter(writer);
 
@@ -120,7 +117,7 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
                         value = requestInfo.getSingleRequestedRegistry();
                         break;
                     case METRIC:
-                        if(requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METADATA) {
+                        if (requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METADATA) {
                             value = Collections.singletonMap(requestInfo.getMetricName(), requestInfo.getMetadata());
                         } else {
                             value = Collections.singletonMap(requestInfo.getMetricName(), requestInfo.getMetric());
@@ -141,7 +138,8 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
 
     private ObjectWriter getWriter(HttpServletRequest request, RequestInfo.RequestType requestType) {
         boolean prettyPrintOff = "false".equals(request.getParameter("pretty"));
-        ObjectMapper mapper = (requestType == RequestInfo.RequestType.JSON_METADATA) ? this.metadataMapper : this.metricMapper;
+        ObjectMapper mapper = (requestType == RequestInfo.RequestType.JSON_METADATA) ? this.metadataMapper :
+                this.metricMapper;
 
         return prettyPrintOff ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter();
     }

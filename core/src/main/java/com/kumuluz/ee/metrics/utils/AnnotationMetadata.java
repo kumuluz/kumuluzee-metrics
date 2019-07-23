@@ -17,18 +17,21 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.utils;
 
-import org.eclipse.microprofile.metrics.*;
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.*;
-import org.eclipse.microprofile.metrics.annotation.Gauge;
-import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.Metric;
 
 import javax.enterprise.inject.spi.InjectionPoint;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -81,8 +84,8 @@ public class AnnotationMetadata {
         String description = "";
         String unit = MetricUnits.NONE;
         boolean reusable = false;
-        if (Counted.class.isInstance(annotation)) {
-            Counted a = (Counted)annotation;
+        if (annotation != null && Counted.class.isInstance(annotation)) {
+            Counted a = (Counted) annotation;
             type = MetricType.COUNTER;
             absolute = a.absolute();
             name = a.name();
@@ -91,8 +94,8 @@ public class AnnotationMetadata {
             description = a.description();
             unit = a.unit();
             reusable = a.reusable();
-        } else if (Timed.class.isInstance(annotation)) {
-            Timed a = (Timed)annotation;
+        } else if (annotation != null && Timed.class.isInstance(annotation)) {
+            Timed a = (Timed) annotation;
             type = MetricType.TIMER;
             absolute = a.absolute();
             name = a.name();
@@ -101,8 +104,8 @@ public class AnnotationMetadata {
             description = a.description();
             unit = a.unit();
             reusable = a.reusable();
-        } else if (Metered.class.isInstance(annotation)) {
-            Metered a = (Metered)annotation;
+        } else if (annotation != null && Metered.class.isInstance(annotation)) {
+            Metered a = (Metered) annotation;
             type = MetricType.METERED;
             absolute = a.absolute();
             name = a.name();
@@ -111,8 +114,8 @@ public class AnnotationMetadata {
             description = a.description();
             unit = a.unit();
             reusable = a.reusable();
-        } else if (Gauge.class.isInstance(annotation)) {
-            Gauge a = (Gauge)annotation;
+        } else if (annotation != null && Gauge.class.isInstance(annotation)) {
+            Gauge a = (Gauge) annotation;
             type = MetricType.GAUGE;
             absolute = a.absolute();
             name = a.name();
@@ -120,8 +123,8 @@ public class AnnotationMetadata {
             displayName = a.displayName();
             description = a.description();
             unit = a.unit();
-        } else if (Metric.class.isInstance(annotation)) {
-            Metric a = (Metric)annotation;
+        } else if (annotation != null && Metric.class.isInstance(annotation)) {
+            Metric a = (Metric) annotation;
             type = getMetricType(member);
             absolute = a.absolute();
             name = a.name();
@@ -160,7 +163,7 @@ public class AnnotationMetadata {
                 .collect(Collectors.toList());
         if (!missingEqualSign.isEmpty()) {
             LOG.log(Level.WARNING, String.format("Annotation %s at %s#%s has tags that don't contain equal sign (=)." +
-                    "They will be ignored. [%s]", type, bean.getName(), member.getName(),
+                            "They will be ignored. [%s]", type, bean.getName(), member.getName(),
                     String.join(",", missingEqualSign)));
         }
         Arrays.stream(tags).forEach(metadata::addTag);
