@@ -96,7 +96,7 @@ public class LogstashSender implements Runnable {
                 try {
                     Thread.sleep(currentRetryDelay);
                 } catch (InterruptedException ie) {
-                    log.severe("Interrupted: " + ie);
+                    log.severe("Interrupted: " + ie.getMessage());
                     // Restore interrupted state...
                     Thread.currentThread().interrupt();
                 }
