@@ -473,13 +473,13 @@ kumuluzee:
               period-s: 15
 ```
 
-Logstash `tcp` input needs to be defined with `json` codec. Example Logstash configuration:
+Logstash `tcp` input needs to be defined with `json_lines` codec. Example Logstash configuration:
 
 ```
 input {
 	tcp {
 		port => 5043
-		codec => 'json'
+		codec => 'json_lines'
 	}
 }
 ```
