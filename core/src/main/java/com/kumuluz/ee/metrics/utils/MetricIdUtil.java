@@ -21,7 +21,9 @@
 package com.kumuluz.ee.metrics.utils;
 
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.Tag;
 
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -31,6 +33,8 @@ import java.util.Map;
  * @since 2.0.0
  */
 public class MetricIdUtil {
+
+    private static ServiceConfigInfo configInfo = ServiceConfigInfo.getInstance();
 
     public static String metricIdToString(MetricID metricID) {
         return metricID.getName() + tagsToSuffix(metricID);
@@ -45,5 +49,20 @@ public class MetricIdUtil {
         }
 
         return sb.toString();
+    }
+
+    public static MetricID newMetricID(String name, Tag... tags) {
+
+        if (configInfo.shouldAddToTags()) {
+            int oldLen = tags.length;
+            tags = Arrays.copyOf(tags, tags.length + 4);
+
+            tags[oldLen] = new Tag("environment", configInfo.getEnvironment());
+            tags[oldLen + 1] = new Tag("serviceName", configInfo.getServiceName());
+            tags[oldLen + 2] = new Tag("serviceVersion", configInfo.getServiceVersion());
+            tags[oldLen + 3] = new Tag("instanceId", configInfo.getInstanceId());
+        }
+
+        return new MetricID(name, tags);
     }
 }

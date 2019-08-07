@@ -49,6 +49,6 @@ public class MetadataWithTags {
     }
 
     public MetricID getMetricID() {
-        return new MetricID(metadata.getName(), tags);
+        return MetricIdUtil.newMetricID(metadata.getName(), tags);
     }
 }

@@ -21,7 +21,7 @@
 package com.kumuluz.ee.metrics.api;
 
 import com.kumuluz.ee.metrics.json.models.MetadataWithMergedTags;
-import com.kumuluz.ee.metrics.utils.ServiceConfigInfo;
+import com.kumuluz.ee.metrics.utils.MetricIdUtil;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.*;
 
@@ -57,19 +57,8 @@ public class MetricRegistryImpl extends MetricRegistry {
     @Override
     public synchronized <T extends Metric> T register(Metadata metadata, T metric, Tag... tags)
             throws IllegalArgumentException {
-        // add default tags
-        ServiceConfigInfo configInfo = ServiceConfigInfo.getInstance();
-        if (configInfo.shouldAddToTags()) {
-            int oldLen = tags.length;
-            tags = Arrays.copyOf(tags, tags.length + 4);
 
-            tags[oldLen] = new Tag("environment", configInfo.getEnvironment());
-            tags[oldLen + 1] = new Tag("serviceName", configInfo.getServiceName());
-            tags[oldLen + 2] = new Tag("serviceVersion", configInfo.getServiceVersion());
-            tags[oldLen + 3] = new Tag("instanceId", configInfo.getInstanceId());
-        }
-
-        MetricID metricID = new MetricID(metadata.getName(), tags);
+        MetricID metricID = MetricIdUtil.newMetricID(metadata.getName(), tags);
 
         Metric existing = this.metricsStorage.putIfAbsent(metricID, metric);
 
@@ -345,7 +334,7 @@ public class MetricRegistryImpl extends MetricRegistry {
         try {
             return register(metadata, metric, tags);
         } catch (IllegalArgumentException e) {
-            MetricID metricID = new MetricID(metadata.getName(), tags);
+            MetricID metricID = MetricIdUtil.newMetricID(metadata.getName(), tags);
             Metric existing = this.metricsStorage.get(metricID);
             if (metricType.isInstance(existing)) {
                 return (T) existing;

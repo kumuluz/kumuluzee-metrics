@@ -1,0 +1,6 @@
+config_ordinal: 100000
+
+kumuluzee:
+  name: test
+  metrics:
+    add-default-tags: true
