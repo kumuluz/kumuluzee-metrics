@@ -18,7 +18,7 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.metrics.utils;
+package com.kumuluz.ee.metrics.api;
 
 import org.eclipse.microprofile.metrics.Counter;
 

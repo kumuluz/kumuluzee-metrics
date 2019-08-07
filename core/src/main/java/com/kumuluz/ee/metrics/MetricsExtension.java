@@ -38,7 +38,7 @@ import com.kumuluz.ee.metrics.api.MeterImpl;
 import com.kumuluz.ee.metrics.api.TimerImpl;
 import com.kumuluz.ee.metrics.filters.InstrumentedFilter;
 import com.kumuluz.ee.metrics.producers.MetricRegistryProducer;
-import com.kumuluz.ee.metrics.utils.ForwardingCounter;
+import com.kumuluz.ee.metrics.api.ForwardingCounter;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.*;
 
