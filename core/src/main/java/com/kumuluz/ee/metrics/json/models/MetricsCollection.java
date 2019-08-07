@@ -17,29 +17,35 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
-package com.kumuluz.ee.metrics.api;
+ */
+package com.kumuluz.ee.metrics.json.models;
 
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricFilter;
+import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Adapter from Microprofile MetricFilter to Dropwizard MetricFilter.
+ * Holder object for collection of metrics, not necessary a {@link MetricRegistry}.
  *
  * @author Urban Malc
- * @author Aljaž Blažej
- * @since 1.0.0
+ * @since 2.0.0
  */
-public class MetricFilterAdapter implements MetricFilter {
+public class MetricsCollection {
 
-    private org.eclipse.microprofile.metrics.MetricFilter metricFilter;
+    private Map<MetricID, Metric> metrics;
 
-    public MetricFilterAdapter(org.eclipse.microprofile.metrics.MetricFilter metricFilter) {
-        this.metricFilter = metricFilter;
+    public MetricsCollection() {
+        metrics = new HashMap<>();
     }
 
-    @Override
-    public boolean matches(String s, Metric metric) {
-        return this.metricFilter.matches(s, ((MetricAdapter)metric).getMetric());
+    public MetricsCollection(MetricRegistry registry) {
+        metrics = new HashMap<>(registry.getMetrics());
+    }
+
+    public Map<MetricID, Metric> getMetrics() {
+        return metrics;
     }
 }

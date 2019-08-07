@@ -17,13 +17,14 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.json.serializers;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import org.eclipse.microprofile.metrics.Metadata;
+import com.kumuluz.ee.metrics.api.MetricRegistryImpl;
+import com.kumuluz.ee.metrics.json.models.MetadataWithMergedTags;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import java.io.IOException;
@@ -44,9 +45,9 @@ public class MetricRegistryMetadataSerializer extends StdSerializer<MetricRegist
 
     @Override
     public void serialize(MetricRegistry metricRegistry, JsonGenerator json,
-                          SerializerProvider provider)throws IOException {
+                          SerializerProvider provider) throws IOException {
         json.writeStartObject();
-        for(Map.Entry<String, Metadata> entry : metricRegistry.getMetadata().entrySet()) {
+        for (Map.Entry<String, MetadataWithMergedTags> entry : ((MetricRegistryImpl) metricRegistry).getMetadataWithTags().entrySet()) {
             json.writeObjectField(entry.getKey(), entry.getValue());
         }
         json.writeEndObject();

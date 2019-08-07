@@ -17,16 +17,18 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.json.serializers;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.kumuluz.ee.metrics.json.models.MetadataWithMergedTags;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Tag;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.List;
 
 /**
  * Serializer for Microprofile Metadata.
@@ -35,37 +37,36 @@ import java.util.Map;
  * @author Aljaž Blažej
  * @since 1.0.0
  */
-public class MetadataSerializer extends StdSerializer<Metadata> {
+public class MetadataSerializer extends StdSerializer<MetadataWithMergedTags> {
 
     public MetadataSerializer() {
-        super(Metadata.class);
+        super(MetadataWithMergedTags.class);
     }
 
     @Override
-    public void serialize(Metadata metadata, JsonGenerator json, SerializerProvider provider) throws IOException {
+    public void serialize(MetadataWithMergedTags metadataWithTags, JsonGenerator json, SerializerProvider provider)
+            throws IOException {
+
+        Metadata metadata = metadataWithTags.getMetadata();
+
         json.writeStartObject();
-        json.writeStringField("unit", metadata.getUnit());
-        json.writeStringField("type", metadata.getType());
-        json.writeStringField("description", metadata.getDescription());
-        json.writeStringField("displayName", metadata.getDisplayName());
-        json.writeStringField("tags", getTagsAsStringNoQuotes(metadata.getTags()));
-        json.writeEndObject();
-    }
-
-    private static String getTagsAsStringNoQuotes(Map<String, String> tags) {
-        StringBuilder sb = new StringBuilder();
-
-        boolean first = true;
-        for (Map.Entry<String, String> entry : tags.entrySet()) {
-            if (!first) {
-                sb.append(",");
-            } else {
-                first = false;
-            }
-
-            sb.append(entry.getKey()).append("=").append(entry.getValue());
+        if (metadata.getUnit().isPresent()) {
+            json.writeStringField("unit", metadata.getUnit().get());
         }
-
-        return sb.toString();
+        json.writeStringField("type", metadata.getType());
+        if (metadata.getDescription().isPresent()) {
+            json.writeStringField("description", metadata.getDescription().get());
+        }
+        json.writeStringField("displayName", metadata.getDisplayName());
+        json.writeArrayFieldStart("tags");
+        for (List<Tag> tags : metadataWithTags.getTags()) {
+            json.writeStartArray();
+            for (Tag t : tags) {
+                json.writeObject(t);
+            }
+            json.writeEndArray();
+        }
+        json.writeEndArray();
+        json.writeEndObject();
     }
 }

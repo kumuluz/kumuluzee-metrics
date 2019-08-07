@@ -1,0 +1,8 @@
+kumuluzee:
+  metrics:
+    web-instrumentation:
+      - name: empty-endpoint
+        url-pattern: /v1/non-existent/*
+        status-codes: "200, 404"
+      - name: test-endpoint
+        url-pattern: /v1/statusCodes/*

@@ -42,6 +42,8 @@ public class DependencyAppender implements MavenDependencyAppender {
 
         List<String> libs = new ArrayList<>();
 
+        libs.add("com.kumuluz.ee:kumuluzee-jax-rs-jersey:");
+
         libs.add("org.eclipse.microprofile.metrics:microprofile-metrics-api:" +
                 versionsBundle.getString("microprofile-metrics-version"));
         libs.add("io.dropwizard.metrics:metrics-core:" +

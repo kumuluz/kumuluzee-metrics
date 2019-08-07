@@ -18,34 +18,32 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.metrics.json.models;
+package com.kumuluz.ee.metrics.utils;
 
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricID;
 
 import java.util.Map;
 
 /**
- * Metrics payload, used by various reporters. Contains service information and metric registries.
+ * Utility class for working with {@link MetricID}.
  *
  * @author Urban Malc
- * @author Aljaž Blažej
- * @since 1.0.0
+ * @since 2.0.0
  */
-public class MetricsPayload {
+public class MetricIdUtil {
 
-    private Service service;
-    private Map<String, MetricRegistry> registries;
-
-    public MetricsPayload(Map<String, MetricRegistry> registries) {
-        this.service = new Service();
-        this.registries = registries;
+    public static String metricIdToString(MetricID metricID) {
+        return metricID.getName() + tagsToSuffix(metricID);
     }
 
-    public Service getService() {
-        return service;
-    }
+    public static String tagsToSuffix(MetricID metricID) {
 
-    public Map<String, MetricRegistry> getRegistries() {
-        return registries;
+        StringBuilder sb = new StringBuilder();
+
+        for (Map.Entry<String, String> tag : metricID.getTags().entrySet()) {
+            sb.append(";").append(tag.getKey()).append("=").append(tag.getValue().replaceAll(";", "_"));
+        }
+
+        return sb.toString();
     }
 }

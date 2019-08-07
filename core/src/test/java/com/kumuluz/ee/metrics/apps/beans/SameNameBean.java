@@ -17,34 +17,37 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
-package com.kumuluz.ee.metrics.api;
+ */
+package com.kumuluz.ee.metrics.apps.beans;
 
-import com.codahale.metrics.Metric;
-import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.annotation.Metric;
+
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
 
 /**
- * Adapter from Microprofile Metric + Microprofile Metadata to Dropwizard Metric.
+ * Bean with two counters sharing the same name but different tags.
  *
  * @author Urban Malc
- * @author Aljaž Blažej
- * @since 1.0.0
+ * @since 2.0.0
  */
-public class MetricAdapter implements Metric {
+@RequestScoped
+public class SameNameBean {
 
-    private org.eclipse.microprofile.metrics.Metric metric;
-    private Metadata metadata;
+    @Inject
+    @Metric(absolute = true, name = "sameName", tags = {"test=1"})
+    private Counter c1;
 
-    public MetricAdapter(org.eclipse.microprofile.metrics.Metric metric, Metadata metadata) {
-        this.metric = metric;
-        this.metadata = metadata;
+    @Inject
+    @Metric(absolute = true, name = "sameName", tags = {"test=2"})
+    private Counter c2;
+
+    public void increaseFirst() {
+        c1.inc();
     }
 
-    public org.eclipse.microprofile.metrics.Metric getMetric() {
-        return metric;
-    }
-
-    public Metadata getMetadata() {
-        return metadata;
+    public void increaseSecond() {
+        c2.inc();
     }
 }

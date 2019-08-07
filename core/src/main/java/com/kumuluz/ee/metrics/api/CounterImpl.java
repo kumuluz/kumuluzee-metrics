@@ -17,7 +17,7 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.api;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -49,16 +49,6 @@ public class CounterImpl implements Counter {
     @Override
     public void inc(long l) {
         this.counter.inc(l);
-    }
-
-    @Override
-    public void dec() {
-        this.counter.dec();
-    }
-
-    @Override
-    public void dec(long l) {
-        this.counter.dec(l);
     }
 
     @Override

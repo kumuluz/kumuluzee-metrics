@@ -18,34 +18,37 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.metrics.json.models;
+package com.kumuluz.ee.metrics.utils;
 
-import org.eclipse.microprofile.metrics.MetricRegistry;
-
-import java.util.Map;
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
- * Metrics payload, used by various reporters. Contains service information and metric registries.
+ * Holder object for {@link Metadata} and {@link Tag}[] objects.
  *
  * @author Urban Malc
- * @author Aljaž Blažej
- * @since 1.0.0
+ * @since 2.0.0
  */
-public class MetricsPayload {
+public class MetadataWithTags {
 
-    private Service service;
-    private Map<String, MetricRegistry> registries;
+    private Metadata metadata;
+    private Tag[] tags;
 
-    public MetricsPayload(Map<String, MetricRegistry> registries) {
-        this.service = new Service();
-        this.registries = registries;
+    public MetadataWithTags(Metadata metadata, Tag[] tags) {
+        this.metadata = metadata;
+        this.tags = tags;
     }
 
-    public Service getService() {
-        return service;
+    public Metadata getMetadata() {
+        return metadata;
     }
 
-    public Map<String, MetricRegistry> getRegistries() {
-        return registries;
+    public Tag[] getTags() {
+        return tags;
+    }
+
+    public MetricID getMetricID() {
+        return new MetricID(metadata.getName(), tags);
     }
 }

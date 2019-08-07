@@ -17,15 +17,18 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.kumuluz.ee.metrics.json.MetricsModule;
+import com.kumuluz.ee.metrics.json.models.MetricsCollection;
 import com.kumuluz.ee.metrics.prometheus.PrometheusMetricWriter;
 import com.kumuluz.ee.metrics.utils.RequestInfo;
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -36,6 +39,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Servlet, which exposes metrics in JSON and Prometheus format.
@@ -64,7 +69,7 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
 
         RequestInfo requestInfo = new RequestInfo(request);
 
-        if(requestInfo.getRequestType() != RequestInfo.RequestType.INVALID) {
+        if (requestInfo.getRequestType() != RequestInfo.RequestType.INVALID) {
 
             switch (requestInfo.getRequestType()) {
                 case JSON_METRIC:
@@ -87,7 +92,7 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
 
             response.setHeader("Cache-Control", "must-revalidate,no-cache,no-store");
 
-            if(requestInfo.getRequestType() == RequestInfo.RequestType.PROMETHEUS) {
+            if (requestInfo.getRequestType() == RequestInfo.RequestType.PROMETHEUS) {
                 PrintWriter writer = response.getWriter();
                 PrometheusMetricWriter prometheusMetricWriter = new PrometheusMetricWriter(writer);
 
@@ -101,8 +106,12 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
                                     requestInfo.getSingleRequestedRegistry());
                             break;
                         case METRIC:
-                            prometheusMetricWriter.write(requestInfo.getSingleRequestedRegistryName(),
-                                    requestInfo.getSingleRequestedRegistry(), requestInfo.getMetricName());
+                            StringBuilder builder = new StringBuilder();
+                            for (MetricID mid : requestInfo.getMetricsCollection().getMetrics().keySet()) {
+                                prometheusMetricWriter.write(builder, requestInfo.getSingleRequestedRegistryName(),
+                                        requestInfo.getSingleRequestedRegistry(), mid);
+                            }
+                            prometheusMetricWriter.serialize(builder);
                             break;
                     }
                 } catch (IOException e) {
@@ -114,16 +123,28 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
                 Object value = null;
                 switch (requestInfo.getMetricsRequested()) {
                     case ALL:
-                        value = requestInfo.getRequestedRegistries();
+                        if (requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METADATA) {
+                            value = requestInfo.getRequestedRegistries();
+                        } else {
+                            Map<String, MetricsCollection> transformedMap = new HashMap<>();
+                            for (Map.Entry<String, MetricRegistry> entry : requestInfo.getRequestedRegistries().entrySet()) {
+                                transformedMap.put(entry.getKey(), new MetricsCollection(entry.getValue()));
+                            }
+                            value = transformedMap;
+                        }
                         break;
                     case REGISTRY:
-                        value = requestInfo.getSingleRequestedRegistry();
+                        if (requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METADATA) {
+                            value = requestInfo.getSingleRequestedRegistry();
+                        } else {
+                            value = new MetricsCollection(requestInfo.getSingleRequestedRegistry());
+                        }
                         break;
                     case METRIC:
-                        if(requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METADATA) {
+                        if (requestInfo.getRequestType() == RequestInfo.RequestType.JSON_METADATA) {
                             value = Collections.singletonMap(requestInfo.getMetricName(), requestInfo.getMetadata());
                         } else {
-                            value = Collections.singletonMap(requestInfo.getMetricName(), requestInfo.getMetric());
+                            value = requestInfo.getMetricsCollection();
                         }
                         break;
                 }

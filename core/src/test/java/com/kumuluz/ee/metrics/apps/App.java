@@ -17,31 +17,18 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
-package com.kumuluz.ee.metrics.prometheus;
+ */
+package com.kumuluz.ee.metrics.apps;
+
+import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.core.Application;
 
 /**
- * Prometheus tag.
+ * Test JAX-RS application.
  *
  * @author Urban Malc
- * @author Aljaž Blažej
- * @since 1.0.0
+ * @since 2.0.0
  */
-public class Tag {
-
-    private String key;
-    private String value;
-
-    public Tag(String key, String value) {
-        this.key = key.trim();
-        this.value = value.trim();
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public String getValue() {
-        return value;
-    }
+@ApplicationPath("v1")
+public class App extends Application {
 }

@@ -20,32 +20,37 @@
  */
 package com.kumuluz.ee.metrics.json.models;
 
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Tag;
 
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
- * Metrics payload, used by various reporters. Contains service information and metric registries.
+ * Holder object for metadata and merged tags (for metrics with the same name and different tags).
  *
  * @author Urban Malc
- * @author Aljaž Blažej
- * @since 1.0.0
+ * @since 2.0.0
  */
-public class MetricsPayload {
+public class MetadataWithMergedTags {
 
-    private Service service;
-    private Map<String, MetricRegistry> registries;
+    private Metadata metadata;
+    private List<List<Tag>> tags;
 
-    public MetricsPayload(Map<String, MetricRegistry> registries) {
-        this.service = new Service();
-        this.registries = registries;
+    public MetadataWithMergedTags(Metadata metadata) {
+        this.metadata = metadata;
+        this.tags = new LinkedList<>();
     }
 
-    public Service getService() {
-        return service;
+    public Metadata getMetadata() {
+        return metadata;
     }
 
-    public Map<String, MetricRegistry> getRegistries() {
-        return registries;
+    public void addTags(List<Tag> tags) {
+        this.tags.add(tags);
+    }
+
+    public List<List<Tag>> getTags() {
+        return tags;
     }
 }

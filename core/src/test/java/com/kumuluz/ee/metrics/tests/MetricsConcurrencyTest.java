@@ -21,6 +21,7 @@
 package com.kumuluz.ee.metrics.tests;
 
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -30,20 +31,13 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.inject.Inject;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.inject.Inject;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Adds required dependencies to the deployments.
@@ -54,11 +48,11 @@ import static org.junit.Assert.assertTrue;
 @RunWith(Arquillian.class)
 public class MetricsConcurrencyTest {
 
-    private static final Metadata METRIC = new Metadata("myMetric", MetricType.COUNTER);
-
-    static {
-        METRIC.setReusable(false);
-    }
+    private static final Metadata METRIC = Metadata.builder()
+            .withName("myMetric")
+            .withType(MetricType.COUNTER)
+            .notReusable()
+            .build();
 
     @Inject
     private MetricRegistry kumuluzMetricRegistry;
@@ -106,7 +100,7 @@ public class MetricsConcurrencyTest {
         boolean finished = es.awaitTermination(5, TimeUnit.SECONDS);
         assertTrue("Threads not finished in given time", finished);
 
-        final Long count = kumuluzMetricRegistry.getCounters().get(METRIC.getName()).getCount();
+        final Long count = kumuluzMetricRegistry.getCounters().get(new MetricID(METRIC.getName())).getCount();
 
         assertEquals("Metric count is not equal", Long.valueOf(n), count);
         assertFalse(fail.get());
