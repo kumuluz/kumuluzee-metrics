@@ -17,10 +17,8 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.json.models;
-
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import java.util.Map;
 
@@ -34,9 +32,9 @@ import java.util.Map;
 public class MetricsPayload {
 
     private Service service;
-    private Map<String, MetricRegistry> registries;
+    private Map<String, MetricsCollection> registries;
 
-    public MetricsPayload(Map<String, MetricRegistry> registries) {
+    public MetricsPayload(Map<String, MetricsCollection> registries) {
         this.service = new Service();
         this.registries = registries;
     }
@@ -45,7 +43,7 @@ public class MetricsPayload {
         return service;
     }
 
-    public Map<String, MetricRegistry> getRegistries() {
+    public Map<String, MetricsCollection> getRegistries() {
         return registries;
     }
 }

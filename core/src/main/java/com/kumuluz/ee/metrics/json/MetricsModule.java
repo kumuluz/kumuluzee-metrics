@@ -17,7 +17,7 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.json;
 
 import com.fasterxml.jackson.core.Version;
@@ -26,8 +26,8 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.module.SimpleSerializers;
 import com.kumuluz.ee.metrics.json.serializers.MetadataSerializer;
 import com.kumuluz.ee.metrics.json.serializers.MetricRegistryMetadataSerializer;
-import com.kumuluz.ee.metrics.json.serializers.MetricRegistryMetricSerializer;
-import com.kumuluz.ee.metrics.json.serializers.MetricSerializer;
+import com.kumuluz.ee.metrics.json.serializers.MetricsCollectionSerializer;
+import com.kumuluz.ee.metrics.json.serializers.TagSerializer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +59,7 @@ public class MetricsModule extends Module {
 
     @Override
     public Version version() {
-        return new Version(1, 0, 0, "",
+        return new Version(2, 0, 0, "",
                 "com.kumuluz.ee.metrics", "kumuluzee-metrics-core");
     }
 
@@ -67,12 +67,12 @@ public class MetricsModule extends Module {
     public void setupModule(SetupContext context) {
         List<JsonSerializer<?>> serializers = new ArrayList<>(2);
 
-        if(forMetadata) {
+        if (forMetadata) {
             serializers.add(new MetricRegistryMetadataSerializer());
             serializers.add(new MetadataSerializer());
+            serializers.add(new TagSerializer());
         } else {
-            serializers.add(new MetricRegistryMetricSerializer());
-            serializers.add(new MetricSerializer());
+            serializers.add(new MetricsCollectionSerializer());
         }
 
         context.addSerializers(new SimpleSerializers(serializers));

@@ -17,7 +17,7 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics;
 
 import com.kumuluz.ee.metrics.interceptors.utils.AnnotatedTypeDecorator;
@@ -25,14 +25,11 @@ import com.kumuluz.ee.metrics.interceptors.utils.GaugeBeanBinding;
 import com.kumuluz.ee.metrics.interceptors.utils.RegisterMetricsBinding;
 import com.kumuluz.ee.metrics.producers.MetricRegistryProducer;
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
+import com.kumuluz.ee.metrics.utils.MetadataWithTags;
 import com.kumuluz.ee.metrics.utils.ProducerMemberRegistration;
-import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.Gauge;
-import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.Timed;
+import org.eclipse.microprofile.metrics.annotation.*;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
@@ -57,15 +54,18 @@ public class MetricsExtensionCDI implements Extension {
 
     private List<ProducerMemberRegistration> producerMembers = new LinkedList<>();
 
-    private static final AnnotationLiteral<Default> DEFAULT = new AnnotationLiteral<Default>(){};
+    private static final AnnotationLiteral<Default> DEFAULT = new AnnotationLiteral<Default>() {
+    };
 
     private static final AnnotationLiteral<GaugeBeanBinding> GAUGE_BEAN_BINDING =
-            new AnnotationLiteral<GaugeBeanBinding>() {};
+            new AnnotationLiteral<GaugeBeanBinding>() {
+            };
 
     private static final AnnotationLiteral<RegisterMetricsBinding> REGISTER_METRICS_BINDING =
-            new AnnotationLiteral<RegisterMetricsBinding>() {};
+            new AnnotationLiteral<RegisterMetricsBinding>() {
+            };
 
-    private <X> void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class})
+    private <X> void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class, ConcurrentGauge.class})
                                              ProcessAnnotatedType<X> pat) {
         AnnotatedTypeDecorator<X> decoratedType = new AnnotatedTypeDecorator<>(pat.getAnnotatedType(),
                 REGISTER_METRICS_BINDING);
@@ -83,7 +83,7 @@ public class MetricsExtensionCDI implements Extension {
                 != null) {
             Field member = ppf.getAnnotatedProducerField().getJavaMember();
             Class<?> bean = member.getDeclaringClass();
-            Metadata metadata = AnnotationMetadata.buildMetadata(bean, member,
+            MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean, member,
                     org.eclipse.microprofile.metrics.annotation.Metric.class);
             producerMembers.add(new ProducerMemberRegistration(ppf.getBean(), ppf.getAnnotatedProducerField(),
                     metadata));
@@ -95,7 +95,7 @@ public class MetricsExtensionCDI implements Extension {
                 != null) {
             Method member = ppm.getAnnotatedProducerMethod().getJavaMember();
             Class<?> bean = member.getDeclaringClass();
-            Metadata metadata = AnnotationMetadata.buildMetadata(bean, member,
+            MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean, member,
                     org.eclipse.microprofile.metrics.annotation.Metric.class);
             producerMembers.add(new ProducerMemberRegistration(ppm.getBean(), ppm.getAnnotatedProducerMethod(),
                     metadata));
@@ -106,8 +106,9 @@ public class MetricsExtensionCDI implements Extension {
         for (ProducerMemberRegistration registration : producerMembers) {
             if (registration.getBean().getQualifiers().contains(DEFAULT) &&
                     !hasInjectionPoints(registration.getMember())) {
-                applicationRegistry.register(registration.getMetadata(), getReference(manager,
-                        registration.getMember().getBaseType(), registration.getBean()));
+                applicationRegistry.register(registration.getMetadata().getMetadata(),
+                        getReference(manager, registration.getMember().getBaseType(), registration.getBean()),
+                        registration.getMetadata().getTags());
             }
         }
     }

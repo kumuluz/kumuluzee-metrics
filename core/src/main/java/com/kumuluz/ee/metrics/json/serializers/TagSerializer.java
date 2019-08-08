@@ -17,38 +17,30 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.json.serializers;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import org.eclipse.microprofile.metrics.Metric;
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
 
 import java.io.IOException;
-import java.util.Map;
 
 /**
- * Serializer for MetricRegistry, which exposes metrics.
+ * JSON serializer for {@link Tag} objects.
  *
  * @author Urban Malc
- * @author Aljaž Blažej
- * @since 1.0.0
+ * @since 2.0.0
  */
-public class MetricRegistryMetricSerializer extends StdSerializer<MetricRegistry> {
+public class TagSerializer extends StdSerializer<Tag> {
 
-    public MetricRegistryMetricSerializer() {
-        super(MetricRegistry.class);
+    public TagSerializer() {
+        super(Tag.class);
     }
 
     @Override
-    public void serialize(MetricRegistry metricRegistry, JsonGenerator json,
-                          SerializerProvider provider)throws IOException {
-        json.writeStartObject();
-        for(Map.Entry<String, Metric> entry : metricRegistry.getMetrics().entrySet()) {
-            json.writeObjectField(entry.getKey(), entry.getValue());
-        }
-        json.writeEndObject();
+    public void serialize(Tag tag, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+        jsonGenerator.writeString(tag.getTagName() + "=" + tag.getTagValue());
     }
 }

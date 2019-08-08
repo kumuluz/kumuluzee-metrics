@@ -17,14 +17,14 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.interceptors;
 
 import com.kumuluz.ee.metrics.api.ForwardingGauge;
 import com.kumuluz.ee.metrics.interceptors.utils.GaugeBeanBinding;
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
+import com.kumuluz.ee.metrics.utils.MetadataWithTags;
 import org.eclipse.microprofile.metrics.Gauge;
-import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import javax.annotation.Priority;
@@ -36,7 +36,7 @@ import java.lang.reflect.Method;
 
 /**
  * Interceptor for Gauge annotation.
- *
+ * <p>
  * Processes beans, which include methods, annotated with Gauge.
  *
  * @author Urban Malc
@@ -59,13 +59,14 @@ public class GaugeInterceptor {
 
         do {
             for (Method method : type.getDeclaredMethods()) {
-                if(method.isAnnotationPresent(org.eclipse.microprofile.metrics.annotation.Gauge.class)) {
-                    Metadata metadata = AnnotationMetadata.buildMetadata(type, method,
+                if (method.isAnnotationPresent(org.eclipse.microprofile.metrics.annotation.Gauge.class)) {
+                    MetadataWithTags metadata = AnnotationMetadata.buildMetadata(type, method,
                             org.eclipse.microprofile.metrics.annotation.Gauge.class);
-                    Gauge gauge = applicationRegistry.getGauges().get(metadata.getName());
+                    Gauge gauge = applicationRegistry.getGauges().get(metadata.getMetricID());
 
                     if (gauge == null) {
-                        applicationRegistry.register(metadata, new ForwardingGauge(method, context.getTarget()));
+                        applicationRegistry.register(metadata.getMetadata(),
+                                new ForwardingGauge(method, context.getTarget()), metadata.getTags());
                     }
                 }
             }

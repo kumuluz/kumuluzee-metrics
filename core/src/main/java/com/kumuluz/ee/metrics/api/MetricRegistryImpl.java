@@ -17,15 +17,17 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.api;
 
-import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
-import com.kumuluz.ee.metrics.utils.ServiceConfigInfo;
+import com.kumuluz.ee.metrics.json.models.MetadataWithMergedTags;
+import com.kumuluz.ee.metrics.utils.MetricIdUtil;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.*;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Microprofile MetricRegistry implementation.
@@ -36,255 +38,324 @@ import java.util.*;
  */
 public class MetricRegistryImpl extends MetricRegistry {
 
-    private com.codahale.metrics.MetricRegistry metricRegistry;
+    private ConcurrentMap<MetricID, Metric> metricsStorage;
+    private Map<String, Metadata> metadataStorage;
 
     public MetricRegistryImpl() {
-        this.metricRegistry = new com.codahale.metrics.MetricRegistry();
+        this.metricsStorage = new ConcurrentHashMap<>();
+        this.metadataStorage = new HashMap<>();
     }
 
     @Override
     public <T extends Metric> T register(String name, T t) throws IllegalArgumentException {
-        return register(new Metadata(name, MetricType.from(t.getClass())), t);
+        return register(Metadata.builder().withName(name).withType(MetricType.from(t.getClass())).build(), t);
     }
 
     @Override
-    @Deprecated
-    public <T extends Metric> T register(String name, T t, Metadata metadata) throws IllegalArgumentException {
-        Metadata metadataCopy = new Metadata(name, metadata.getDisplayName(), metadata.getDescription(),
-                metadata.getTypeRaw(), metadata.getUnit(), metadata.getTagsAsString());
-        metadataCopy.setReusable(metadata.isReusable());
-        metadataCopy.setName(name);
-        return register(metadataCopy, t);
+    public <T extends Metric> T register(Metadata metadata, T t) throws IllegalArgumentException {
+        return register(metadata, t, new Tag[0]);
     }
 
     @Override
-    public synchronized <T extends Metric> T register(Metadata metadata, T t) throws IllegalArgumentException {
-        // add default tags
-        ServiceConfigInfo configInfo = ServiceConfigInfo.getInstance();
-        if(configInfo.shouldAddToTags()) {
-            metadata.addTag("environment=" + configInfo.getEnvironment());
-            metadata.addTag("serviceName=" + configInfo.getServiceName());
-            metadata.addTag("serviceVersion=" + configInfo.getServiceVersion());
-            metadata.addTag("instanceId=" + configInfo.getInstanceId());
-        }
+    public synchronized <T extends Metric> T register(Metadata metadata, T metric, Tag... tags)
+            throws IllegalArgumentException {
 
-        Optional<String> tagsFromConfig = ConfigurationUtil.getInstance().get("MP_METRICS_TAGS");
-        tagsFromConfig.ifPresent(metadata::addTags);
+        MetricID metricID = MetricIdUtil.newMetricID(metadata.getName(), tags);
 
-        try {
-            metricRegistry.register(metadata.getName(), new MetricAdapter(t, metadata));
-        } catch (IllegalArgumentException e) {
-            com.codahale.metrics.Metric m = metricRegistry.getMetrics().get(metadata.getName());
-            if (m instanceof MetricAdapter) {
-                Metadata existingMetadata = ((MetricAdapter) m).getMetadata();
-                if (existingMetadata.isReusable() && metadata.isReusable() &&
-                        existingMetadata.getTypeRaw().equals(metadata.getTypeRaw())) {
-                    return t;
+        Metric existing = this.metricsStorage.putIfAbsent(metricID, metric);
+
+        if (existing != null) {
+            Metadata existingMetadata = metadataStorage.get(metricID.getName());
+            if (metadata.isReusable() && existingMetadata.isReusable()) {
+                if (metadata.getTypeRaw().equals(existingMetadata.getTypeRaw()) &&
+                        metadata.getUnit().equals(existingMetadata.getUnit())) {
+                    //noinspection unchecked
+                    return (T) existing;
                 } else {
-                    throw e;
+                    throw new IllegalArgumentException("Metric " + metricID +
+                            " is not compatible with previously registered metric.");
                 }
+            } else {
+                throw new IllegalArgumentException("Metric " + metricID + " already exists and is not reusable.");
             }
         }
-        return t;
+
+        metadataStorage.putIfAbsent(metricID.getName(), metadata);
+
+        return metric;
     }
 
     @Override
     public Counter counter(String name) {
-        return counter(new Metadata(name, MetricType.COUNTER));
+        return counter(name, new Tag[0]);
     }
 
     @Override
-    public synchronized Counter counter(Metadata metadata) {
-        Map<String, com.codahale.metrics.Metric> metrics = metricRegistry.getMetrics();
-        if(metrics.containsKey(metadata.getName()) && metrics.get(metadata.getName()) instanceof MetricAdapter
-                && ((MetricAdapter)metrics.get(metadata.getName())).getMetric() instanceof Counter) {
-            return (Counter)((MetricAdapter)metrics.get(metadata.getName())).getMetric();
-        }
+    public Counter counter(String name, Tag... tags) {
+        return counter(Metadata.builder().withName(name).withType(MetricType.COUNTER).build(), tags);
+    }
 
-        return register(metadata, new CounterImpl());
+    @Override
+    public Counter counter(Metadata metadata) {
+        return counter(metadata, new Tag[0]);
+    }
+
+    @Override
+    public Counter counter(Metadata metadata, Tag... tags) {
+        return getOrAdd(new CounterImpl(), Counter.class, metadata, tags);
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(String name) {
+        return concurrentGauge(name, new Tag[0]);
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(String name, Tag... tags) {
+        return concurrentGauge(Metadata.builder().withName(name).withType(MetricType.CONCURRENT_GAUGE).build(), tags);
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(Metadata metadata) {
+        return concurrentGauge(metadata, new Tag[0]);
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(Metadata metadata, Tag... tags) {
+        return getOrAdd(new ConcurrentGaugeImpl(), ConcurrentGauge.class, metadata, tags);
     }
 
     @Override
     public Histogram histogram(String name) {
-        return histogram(new Metadata(name, MetricType.HISTOGRAM));
+        return histogram(name, new Tag[0]);
     }
 
     @Override
-    public synchronized Histogram histogram(Metadata metadata) {
-        Map<String, com.codahale.metrics.Metric> metrics = metricRegistry.getMetrics();
-        if(metrics.containsKey(metadata.getName()) && metrics.get(metadata.getName()) instanceof MetricAdapter
-                && ((MetricAdapter)metrics.get(metadata.getName())).getMetric() instanceof Histogram) {
-            return (Histogram)((MetricAdapter)metrics.get(metadata.getName())).getMetric();
-        }
+    public Histogram histogram(String name, Tag... tags) {
+        return histogram(Metadata.builder().withName(name).withType(MetricType.HISTOGRAM).build(), tags);
+    }
 
-        return register(metadata, new HistogramImpl());
+    @Override
+    public Histogram histogram(Metadata metadata) {
+        return histogram(metadata, new Tag[0]);
+    }
+
+    @Override
+    public Histogram histogram(Metadata metadata, Tag... tags) {
+        return getOrAdd(new HistogramImpl(), Histogram.class, metadata, tags);
     }
 
     @Override
     public Meter meter(String name) {
-        return meter(new Metadata(name, MetricType.METERED));
+        return meter(name, new Tag[0]);
     }
 
     @Override
-    public synchronized Meter meter(Metadata metadata) {
-        Map<String, com.codahale.metrics.Metric> metrics = metricRegistry.getMetrics();
-        if(metrics.containsKey(metadata.getName()) && metrics.get(metadata.getName()) instanceof MetricAdapter
-                && ((MetricAdapter)metrics.get(metadata.getName())).getMetric() instanceof Meter) {
-            return (Meter)((MetricAdapter)metrics.get(metadata.getName())).getMetric();
-        }
+    public Meter meter(String name, Tag... tags) {
+        return meter(Metadata.builder().withName(name).withType(MetricType.METERED).build(), tags);
+    }
 
-        return register(metadata, new MeterImpl());
+    @Override
+    public Meter meter(Metadata metadata) {
+        return meter(metadata, new Tag[0]);
+    }
+
+    @Override
+    public Meter meter(Metadata metadata, Tag... tags) {
+        return getOrAdd(new MeterImpl(), Meter.class, metadata, tags);
     }
 
     @Override
     public Timer timer(String name) {
-        return timer(new Metadata(name, MetricType.TIMER));
+        return timer(name, new Tag[0]);
     }
 
     @Override
-    public synchronized Timer timer(Metadata metadata) {
-        Map<String, com.codahale.metrics.Metric> metrics = metricRegistry.getMetrics();
-        if(metrics.containsKey(metadata.getName()) && metrics.get(metadata.getName()) instanceof MetricAdapter
-                && ((MetricAdapter)metrics.get(metadata.getName())).getMetric() instanceof Timer) {
-            return (Timer)((MetricAdapter)metrics.get(metadata.getName())).getMetric();
+    public Timer timer(String name, Tag... tags) {
+        return timer(Metadata.builder().withName(name).withType(MetricType.TIMER).build(), tags);
+    }
+
+    @Override
+    public Timer timer(Metadata metadata) {
+        return timer(metadata, new Tag[0]);
+    }
+
+    @Override
+    public Timer timer(Metadata metadata, Tag... tags) {
+        return getOrAdd(new TimerImpl(), Timer.class, metadata, tags);
+    }
+
+    @Override
+    public synchronized boolean remove(String name) {
+
+        List<MetricID> toRemove = new LinkedList<>();
+
+        for (MetricID mid : this.metricsStorage.keySet()) {
+            if (mid.getName().equals(name)) {
+                toRemove.add(mid);
+            }
         }
 
-        return register(metadata, new TimerImpl());
+        boolean removed = false;
+        for (MetricID mid : toRemove) {
+            removed |= this.remove(mid);
+        }
+
+        if (removed) {
+            this.metadataStorage.remove(name);
+        }
+
+        return removed;
     }
 
     @Override
-    public boolean remove(String name) {
-        return this.metricRegistry.remove(name);
+    public synchronized boolean remove(MetricID metricID) {
+        boolean removed = this.metricsStorage.remove(metricID) != null;
+
+        if (removed && this.metricsStorage.keySet().stream().noneMatch(mid -> mid.equals(metricID))) {
+            this.metadataStorage.remove(metricID.getName());
+        }
+
+        return removed;
     }
 
     @Override
-    public void removeMatching(MetricFilter metricFilter) {
-        this.metricRegistry.removeMatching(new MetricFilterAdapter(metricFilter));
+    public synchronized void removeMatching(MetricFilter metricFilter) {
+        for (Map.Entry<MetricID, Metric> entry : this.metricsStorage.entrySet()) {
+            if (metricFilter.matches(entry.getKey(), entry.getValue())) {
+                this.remove(entry.getKey());
+            }
+        }
     }
 
     @Override
     public SortedSet<String> getNames() {
-        return this.metricRegistry.getNames();
+        SortedSet<String> names = new TreeSet<>();
+
+        for (MetricID id : this.metricsStorage.keySet()) {
+            names.add(id.getName());
+        }
+
+        return names;
     }
 
     @Override
-    public SortedMap<String, Gauge> getGauges() {
+    public SortedSet<MetricID> getMetricIDs() {
+        return new TreeSet<>(this.metricsStorage.keySet());
+    }
+
+    @Override
+    public SortedMap<MetricID, Gauge> getGauges() {
         return getGauges(MetricFilter.ALL);
     }
 
     @Override
-    public SortedMap<String, Gauge> getGauges(MetricFilter metricFilter) {
-        Map<String, com.codahale.metrics.Metric> metrics = this.metricRegistry.getMetrics();
-        SortedMap<String, Gauge> gauges = new TreeMap<>();
-        for(Map.Entry<String, com.codahale.metrics.Metric> entry : metrics.entrySet()) {
-            com.codahale.metrics.Metric m = entry.getValue();
-            if(m instanceof MetricAdapter && ((MetricAdapter)m).getMetric() instanceof Gauge &&
-                    metricFilter.matches(entry.getKey(), ((MetricAdapter)m).getMetric())) {
-                gauges.put(entry.getKey(), (Gauge)((MetricAdapter)m).getMetric());
-            }
-        }
-        return gauges;
+    public SortedMap<MetricID, Gauge> getGauges(MetricFilter metricFilter) {
+        return getMetricsOfType(metricFilter, Gauge.class);
     }
 
     @Override
-    public SortedMap<String, Counter> getCounters() {
+    public SortedMap<MetricID, Counter> getCounters() {
         return getCounters(MetricFilter.ALL);
     }
 
     @Override
-    public SortedMap<String, Counter> getCounters(MetricFilter metricFilter) {
-        Map<String, com.codahale.metrics.Metric> metrics = this.metricRegistry.getMetrics();
-        SortedMap<String, Counter> counters = new TreeMap<>();
-        for(Map.Entry<String, com.codahale.metrics.Metric> entry : metrics.entrySet()) {
-            com.codahale.metrics.Metric m = entry.getValue();
-            if(m instanceof MetricAdapter && ((MetricAdapter)m).getMetric() instanceof Counter &&
-                    metricFilter.matches(entry.getKey(), ((MetricAdapter)m).getMetric())) {
-                counters.put(entry.getKey(), (Counter)((MetricAdapter)m).getMetric());
-            }
-        }
-        return counters;
+    public SortedMap<MetricID, Counter> getCounters(MetricFilter metricFilter) {
+        return getMetricsOfType(metricFilter, Counter.class);
     }
 
     @Override
-    public SortedMap<String, Histogram> getHistograms() {
+    public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges() {
+        return getConcurrentGauges(MetricFilter.ALL);
+    }
+
+    @Override
+    public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges(MetricFilter metricFilter) {
+        return getMetricsOfType(metricFilter, ConcurrentGauge.class);
+    }
+
+    @Override
+    public SortedMap<MetricID, Histogram> getHistograms() {
         return getHistograms(MetricFilter.ALL);
     }
 
     @Override
-    public SortedMap<String, Histogram> getHistograms(MetricFilter metricFilter) {
-        Map<String, com.codahale.metrics.Metric> metrics = this.metricRegistry.getMetrics();
-        SortedMap<String, Histogram> histograms = new TreeMap<>();
-        for(Map.Entry<String, com.codahale.metrics.Metric> entry : metrics.entrySet()) {
-            com.codahale.metrics.Metric m = entry.getValue();
-            if(m instanceof MetricAdapter && ((MetricAdapter)m).getMetric() instanceof Histogram &&
-                    metricFilter.matches(entry.getKey(), ((MetricAdapter)m).getMetric())) {
-                histograms.put(entry.getKey(), (Histogram)((MetricAdapter)m).getMetric());
-            }
-        }
-        return histograms;
+    public SortedMap<MetricID, Histogram> getHistograms(MetricFilter metricFilter) {
+        return getMetricsOfType(metricFilter, Histogram.class);
     }
 
     @Override
-    public SortedMap<String, Meter> getMeters() {
+    public SortedMap<MetricID, Meter> getMeters() {
         return getMeters(MetricFilter.ALL);
     }
 
     @Override
-    public SortedMap<String, Meter> getMeters(MetricFilter metricFilter) {
-        Map<String, com.codahale.metrics.Metric> metrics = this.metricRegistry.getMetrics();
-        SortedMap<String, Meter> meters = new TreeMap<>();
-        for(Map.Entry<String, com.codahale.metrics.Metric> entry : metrics.entrySet()) {
-            com.codahale.metrics.Metric m = entry.getValue();
-            if(m instanceof MetricAdapter && ((MetricAdapter)m).getMetric() instanceof Meter &&
-                    metricFilter.matches(entry.getKey(), ((MetricAdapter)m).getMetric())) {
-                meters.put(entry.getKey(), (Meter)((MetricAdapter)m).getMetric());
-            }
-        }
-        return meters;
+    public SortedMap<MetricID, Meter> getMeters(MetricFilter metricFilter) {
+        return getMetricsOfType(metricFilter, Meter.class);
     }
 
     @Override
-    public SortedMap<String, Timer> getTimers() {
+    public SortedMap<MetricID, Timer> getTimers() {
         return getTimers(MetricFilter.ALL);
     }
 
     @Override
-    public SortedMap<String, Timer> getTimers(MetricFilter metricFilter) {
-        Map<String, com.codahale.metrics.Metric> metrics = this.metricRegistry.getMetrics();
-        SortedMap<String, Timer> timers = new TreeMap<>();
-        for(Map.Entry<String, com.codahale.metrics.Metric> entry : metrics.entrySet()) {
-            com.codahale.metrics.Metric m = entry.getValue();
-            if(m instanceof MetricAdapter && ((MetricAdapter)m).getMetric() instanceof Timer &&
-                    metricFilter.matches(entry.getKey(), ((MetricAdapter)m).getMetric())) {
-                timers.put(entry.getKey(), (Timer)((MetricAdapter)m).getMetric());
-            }
-        }
-        return timers;
+    public SortedMap<MetricID, Timer> getTimers(MetricFilter metricFilter) {
+        return getMetricsOfType(metricFilter, Timer.class);
     }
 
     @Override
-    public Map<String, Metric> getMetrics() {
-        Map<String, com.codahale.metrics.Metric> metrics = this.metricRegistry.getMetrics();
-        Map<String, Metric> metricsWrapped = new HashMap<>();
-        for(Map.Entry<String, com.codahale.metrics.Metric> entry : metrics.entrySet()) {
-            com.codahale.metrics.Metric m = entry.getValue();
-            if(m instanceof MetricAdapter) {
-                metricsWrapped.put(entry.getKey(), ((MetricAdapter)m).getMetric());
-            }
-        }
-        return metricsWrapped;
+    public Map<MetricID, Metric> getMetrics() {
+        return Collections.unmodifiableMap(this.metricsStorage);
     }
 
     @Override
     public Map<String, Metadata> getMetadata() {
-        Map<String, com.codahale.metrics.Metric> metrics = this.metricRegistry.getMetrics();
-        Map<String, Metadata> metadata = new HashMap<>();
-        for(Map.Entry<String, com.codahale.metrics.Metric> entry : metrics.entrySet()) {
-            com.codahale.metrics.Metric m = entry.getValue();
-            if(m instanceof MetricAdapter) {
-                metadata.put(entry.getKey(), ((MetricAdapter)m).getMetadata());
+        return Collections.unmodifiableMap(this.metadataStorage);
+    }
+
+    public Map<String, MetadataWithMergedTags> getMetadataWithTags() {
+
+        Map<String, MetadataWithMergedTags> metadata = new HashMap<>();
+
+        for (MetricID metricID : this.metricsStorage.keySet()) {
+            String name = metricID.getName();
+
+            if (!metadata.containsKey(metricID.getName())) {
+                metadata.put(name, new MetadataWithMergedTags(this.metadataStorage.get(name)));
+            }
+
+            metadata.get(name).addTags(metricID.getTagsAsList());
+        }
+
+        return metadata;
+    }
+
+    @SuppressWarnings("unchecked")
+    private synchronized <T extends Metric> T getOrAdd(T metric, Class<T> metricType, Metadata metadata, Tag... tags) {
+        try {
+            return register(metadata, metric, tags);
+        } catch (IllegalArgumentException e) {
+            MetricID metricID = MetricIdUtil.newMetricID(metadata.getName(), tags);
+            Metric existing = this.metricsStorage.get(metricID);
+            if (metricType.isInstance(existing)) {
+                return (T) existing;
+            } else {
+                throw new IllegalArgumentException("Metric " + metricID + " is already registered with a different type.");
             }
         }
-        return metadata;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Metric> SortedMap<MetricID, T> getMetricsOfType(MetricFilter filter, Class<T> metricType) {
+        SortedMap<MetricID, T> metrics = new TreeMap<>();
+
+        for (Map.Entry<MetricID, Metric> entry : this.metricsStorage.entrySet()) {
+            if (metricType.isInstance(entry.getValue()) && filter.matches(entry.getKey(), entry.getValue())) {
+                metrics.put(entry.getKey(), (T) entry.getValue());
+            }
+        }
+
+        return metrics;
     }
 }

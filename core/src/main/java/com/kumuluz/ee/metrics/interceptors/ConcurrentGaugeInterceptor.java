@@ -22,9 +22,8 @@ package com.kumuluz.ee.metrics.interceptors;
 
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
 import com.kumuluz.ee.metrics.utils.MetadataWithTags;
-import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 
 import javax.annotation.Priority;
 import javax.enterprise.inject.Intercepted;
@@ -45,9 +44,9 @@ import java.lang.reflect.Member;
  * @since 1.0.0
  */
 @Interceptor
-@Counted
+@ConcurrentGauge
 @Priority(Interceptor.Priority.LIBRARY_BEFORE)
-public class CountedInterceptor {
+public class ConcurrentGaugeInterceptor {
 
     @Inject
     private MetricRegistry applicationRegistry;
@@ -55,7 +54,7 @@ public class CountedInterceptor {
     private Bean<?> bean;
 
     @Inject
-    private CountedInterceptor(@Intercepted Bean<?> bean) {
+    private ConcurrentGaugeInterceptor(@Intercepted Bean<?> bean) {
         this.bean = bean;
     }
 
@@ -71,15 +70,20 @@ public class CountedInterceptor {
 
     private <E extends Member & AnnotatedElement> Object applyInterceptor(InvocationContext context, E member)
             throws Exception {
-        MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, Counted.class);
-        Counter counter = applicationRegistry.getCounters().get(metadata.getMetricID());
-        if (counter == null) {
-            throw new IllegalStateException("No counter with ID [" + metadata.getMetricID() + "] found in registry ["
+        MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, ConcurrentGauge.class);
+        org.eclipse.microprofile.metrics.ConcurrentGauge concurrentGauge = applicationRegistry.getConcurrentGauges()
+                .get(metadata.getMetricID());
+        if (concurrentGauge == null) {
+            throw new IllegalStateException("No concurrent gauge with ID [" + metadata.getMetricID() + "] found in registry ["
                     + applicationRegistry + "]");
         }
 
-        counter.inc();
+        concurrentGauge.inc();
 
-        return context.proceed();
+        try {
+            return context.proceed();
+        } finally {
+            concurrentGauge.dec();
+        }
     }
 }

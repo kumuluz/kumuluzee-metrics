@@ -5,7 +5,7 @@
 
 KumuluzEE Metrics is a metrics collecting extension for the KumuluzEE microservice framework. It provides support for
 collecting different system, application and user-defined metrics and exposing them in different ways. Metrics can be
-exposed on a URL, as a JSON object or in Prometheus format. 
+exposed on a URL as a JSON object or in Prometheus format. 
 
 KumuluzEE Metrics currently provides Logs and Logstash reporters and a servlet, which exposes metrics in JSON or
 Prometheus format.
@@ -16,11 +16,12 @@ of application specific metrics, as described below.
 The implementation is based on Dropwizard metrics. More information about their implementation can be found on
 [github](https://github.com/dropwizard/metrics) or their [official page](http://metrics.dropwizard.io).
 
-KumuluzEE Metrics is fully compliant with [MicroProfile Metrics 1.1](https://microprofile.io/project/eclipse/microprofile-metrics).
+KumuluzEE Metrics is fully compliant with [MicroProfile Metrics 2.0](https://microprofile.io/project/eclipse/microprofile-metrics).
 
 ## Usage
 
 You can enable the metrics extension by adding the following dependency:
+
 ```xml
 <dependency>
     <groupId>com.kumuluz.ee.metrics</groupId>
@@ -29,12 +30,25 @@ You can enable the metrics extension by adding the following dependency:
 </dependency>
 ```
 
+This extension requires the [KumuluzEE Config MicroProfile extension](https://github.com/kumuluz/kumuluzee-config-mp)
+in order to work. You can add it to your project like so:
+
+```xml
+<dependency>
+    <groupId>com.kumuluz.ee.config</groupId>
+    <artifactId>kumuluzee-config-mp</artifactId>
+    <version>${kumuluzee-config-mp.version}</version>
+</dependency>
+```
+
 ## Metric Types
 
 There are several different measuring tools available: 
 
 - Gauge: measures a simple value
-- Counter: measures an integer, which can increase and decrease
+- Counter: measures an integer, which can only increase
+- ConcurrentGauge: measures an integer, which can increase and decrease, as well as the minimum and maximum value in the
+  previous minute
 - Histogram: measures the distribution of values in a stream of data
 - Meter: measures the rate at which a set of events occur
 - Timer: measures a histogram of the duration of a type of event and a meter of the rate of its occurrence
@@ -52,7 +66,7 @@ private int getQueueLength() {
 
 ### Counter
 
-A `Counter` measures incrementing and decrementing value.
+A `Counter` measures a value that only increments (except on application restart).
 
 ```java
 @Counted(name = "simple_counter")
@@ -61,9 +75,7 @@ public void foo() {
 }
 ```
 
-By default, methods annotated with `@Counted` decrement the counter when the method returns, counting current
-invocations. If the `monotonic` annotation parameter in the `@Counted` annotation is set to true, counter increases
-monotonically, counting total invocations.
+Methods annotated with `@Counted` increment a counter on every invocation and thus count total invocations.
 
 A `Counter` can be programmatically updated, as shown in the following example:
 
@@ -74,7 +86,31 @@ private Counter counter;
 
 public void foo() {
     counter.inc(2);
-    counter.dec();
+}
+```
+
+### ConcurrentGauge
+
+A `ConcurrentGauge` measures incrementing and decrementing value. It also measures the minimum and maximum value in the
+previous minute. It is especially useful when counting ongoing invocations.
+
+```java
+@ConcurrentGauge(name = "simple_concurrent_gauge")
+public void foo() {
+    ...
+}
+```
+
+A `ConcurrentGauge` can be programmatically updated, as shown in the following example:
+
+```java
+@Inject
+@Metric(name = "simple_concurrent_gauge")
+private ConcurrentGauge concurrentGauge;
+
+public void foo() {
+    concurrentGauge.inc();
+    concurrentGauge.dec();
 }
 ```
 
@@ -235,7 +271,7 @@ kumuluzee:
             url-pattern: /prometheus/*
 ```
 
-Web Application metrics will be reported in the `vendor` registry, prefixed with `webInstrumentation.<monitoring-name>`.
+Web Application metrics will be reported in the `vendor` registry, prefixed with `web-instrumentation.<monitoring-name>`.
 
 ### Base metrics
 
@@ -260,7 +296,7 @@ kumuluzee:
     metrics:
         servlet:
           enabled: true
-          mapping: /my-servlet-metrics
+          mapping: /my-metrics-servlet
 ```
 
 ### JSON metrics
@@ -273,6 +309,9 @@ Servlet exposes the following endpoints, when the `Accept` header of the request
 - OPTIONS /metrics/{registry} - Returns metrics' metadata for the metrics, registered in the specified scope
 - OPTIONS /metrics/{registry}/{metric_name} - Returns metric's metadata, that matches the metric name for the specified
   registry
+
+Note that when requesting a single metric all metrics registered under that name will be returned
+(they must have different tags).
 
 Example of the servlet output on GET request on `/metrics`:
 ```json
@@ -441,7 +480,7 @@ kumuluzee:
             level: INFO
 ```
 
-The metrics are logged in the same JSON format as exposed by the servlet GET method.
+The metrics are logged in the same JSON format as exposed by the servlet GET method alongside with service information.
 
 ### Logstash
 
@@ -473,13 +512,13 @@ kumuluzee:
               period-s: 15
 ```
 
-Logstash `tcp` input needs to be defined with `json` codec. Example Logstash configuration:
+Logstash `tcp` input needs to be defined with `json_lines` codec. Example Logstash configuration:
 
 ```
 input {
 	tcp {
 		port => 5043
-		codec => 'json'
+		codec => 'json_lines'
 	}
 }
 ```

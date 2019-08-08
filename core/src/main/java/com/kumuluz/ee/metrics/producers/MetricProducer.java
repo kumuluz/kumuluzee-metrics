@@ -17,10 +17,11 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.producers;
 
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
+import com.kumuluz.ee.metrics.utils.MetadataWithTags;
 import org.eclipse.microprofile.metrics.*;
 
 import javax.annotation.Priority;
@@ -48,29 +49,39 @@ public class MetricProducer {
 
     @Produces
     public Meter produceMeter(InjectionPoint injectionPoint) {
-        return applicationRegistry.meter(AnnotationMetadata.buildProducerMetadata(injectionPoint));
+        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint);
+        return applicationRegistry.meter(metadataWithTags.getMetadata(), metadataWithTags.getTags());
     }
 
     @Produces
     public Timer produceTimer(InjectionPoint injectionPoint) {
-        return applicationRegistry.timer(AnnotationMetadata.buildProducerMetadata(injectionPoint));
+        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint);
+        return applicationRegistry.timer(metadataWithTags.getMetadata(), metadataWithTags.getTags());
     }
 
     @Produces
     public Counter produceCounter(InjectionPoint injectionPoint) {
-        return applicationRegistry.counter(AnnotationMetadata.buildProducerMetadata(injectionPoint));
+        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint);
+        return applicationRegistry.counter(metadataWithTags.getMetadata(), metadataWithTags.getTags());
+    }
+
+    @Produces
+    public ConcurrentGauge produceConcurrentGauge(InjectionPoint injectionPoint) {
+        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint);
+        return applicationRegistry.concurrentGauge(metadataWithTags.getMetadata(), metadataWithTags.getTags());
     }
 
     @Produces
     public Histogram produceHistogram(InjectionPoint injectionPoint) {
-        return applicationRegistry.histogram(AnnotationMetadata.buildProducerMetadata(injectionPoint));
+        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint);
+        return applicationRegistry.histogram(metadataWithTags.getMetadata(), metadataWithTags.getTags());
     }
 
     @SuppressWarnings("unchecked")
     @Produces
     public <T> Gauge<T> produceGauge(InjectionPoint injectionPoint) {
-        Metadata m = AnnotationMetadata.buildProducerMetadata(injectionPoint);
+        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint);
 
-        return () -> (T) applicationRegistry.getGauges().get(m.getName()).getValue();
+        return () -> (T) applicationRegistry.getGauges().get(metadataWithTags.getMetricID()).getValue();
     }
 }

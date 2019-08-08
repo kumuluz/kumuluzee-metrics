@@ -17,7 +17,7 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.prometheus;
 
 import org.eclipse.microprofile.metrics.*;
@@ -51,7 +51,7 @@ public class PrometheusMetricWriter {
 
     public void write(Map<String, MetricRegistry> metricRegistries) throws IOException {
         StringBuilder builder = new StringBuilder();
-        for(Map.Entry<String, MetricRegistry> entry : metricRegistries.entrySet()) {
+        for (Map.Entry<String, MetricRegistry> entry : metricRegistries.entrySet()) {
             writeMetricsAsPrometheus(builder, entry.getKey(), entry.getValue());
         }
         serialize(builder);
@@ -63,10 +63,8 @@ public class PrometheusMetricWriter {
         serialize(builder);
     }
 
-    public void write(String registryName, MetricRegistry registry, String metricName) throws IOException {
-        StringBuilder builder = new StringBuilder();
+    public void write(StringBuilder builder, String registryName, MetricRegistry registry, MetricID metricName) throws IOException {
         writeMetricsAsPrometheus(builder, registryName, registry, metricName);
-        serialize(builder);
     }
 
     private void writeMetricsAsPrometheus(StringBuilder builder, String registryName, MetricRegistry registry) {
@@ -74,33 +72,33 @@ public class PrometheusMetricWriter {
     }
 
     private void writeMetricsAsPrometheus(StringBuilder builder, String registryName, MetricRegistry registry,
-                                          String metricName) {
+                                          MetricID metricName) {
         writeMetricMapAsPrometheus(builder, registryName,
                 Collections.singletonMap(metricName, registry.getMetrics().get(metricName)), registry.getMetadata());
     }
 
-    private void writeMetricMapAsPrometheus(StringBuilder builder, String registryName, Map<String, Metric> metricMap,
+    private void writeMetricMapAsPrometheus(StringBuilder builder, String registryName, Map<MetricID, Metric> metricMap,
                                             Map<String, Metadata> metricMetadataMap) {
-        for (Map.Entry<String, Metric> entry : metricMap.entrySet()) {
-            String metricNamePrometheus = registryName + ":" + entry.getKey();
+        for (Map.Entry<MetricID, Metric> entry : metricMap.entrySet()) {
+            String metricNamePrometheus = registryName + "_" + entry.getKey().getName();
             Metric metric = entry.getValue();
-            String entryName = entry.getKey();
+            MetricID entryName = entry.getKey();
 
             //description
-            Metadata metricMetaData = metricMetadataMap.get(entryName);
+            Metadata metricMetaData = metricMetadataMap.get(entryName.getName());
 
             String description;
 
-            if (metricMetaData.getDescription() == null || metricMetaData.getDescription().trim().isEmpty()) {
+            if (!metricMetaData.getDescription().isPresent() || metricMetaData.getDescription().get().trim().isEmpty()) {
                 description = "";
             } else {
-                description = metricMetaData.getDescription().trim();
+                description = metricMetaData.getDescription().get().trim();
             }
 
-            String tags = metricMetaData.getTagsAsString();
+            String tags = entryName.getTagsAsString();
 
             //appending unit to the metric name
-            String unit = metricMetaData.getUnit();
+            String unit = metricMetaData.getUnit().orElse(null);
 
             //Unit determination / translation
             double conversionFactor;
@@ -219,13 +217,15 @@ public class PrometheusMetricWriter {
                         conversionFactor, tags, appendUnit);
             } else if (Meter.class.isInstance(metric)) {
                 PrometheusBuilder.buildMeter(builder, metricNamePrometheus, (Meter) metric, description, tags);
+            } else if (ConcurrentGauge.class.isInstance(metric)) {
+                PrometheusBuilder.buildConcurrentGauge(builder, metricNamePrometheus, (ConcurrentGauge) metric, description, tags);
             } else {
                 log.warning("Metric type '" + metric.getClass() + " for " + entryName + " is invalid.");
             }
         }
     }
 
-    private void serialize(StringBuilder builder) throws IOException {
+    public void serialize(StringBuilder builder) throws IOException {
         try {
             writer.write(builder.toString());
         } finally {

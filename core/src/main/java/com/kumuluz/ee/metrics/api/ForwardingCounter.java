@@ -17,34 +17,25 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.api;
 
-import com.codahale.metrics.Metric;
-import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Counter;
 
 /**
- * Adapter from Microprofile Metric + Microprofile Metadata to Dropwizard Metric.
+ * Microprofile Counter with unimplemented getCount().
  *
  * @author Urban Malc
  * @author Aljaž Blažej
  * @since 1.0.0
  */
-public class MetricAdapter implements Metric {
+public abstract class ForwardingCounter implements Counter {
 
-    private org.eclipse.microprofile.metrics.Metric metric;
-    private Metadata metadata;
-
-    public MetricAdapter(org.eclipse.microprofile.metrics.Metric metric, Metadata metadata) {
-        this.metric = metric;
-        this.metadata = metadata;
+    @Override
+    public void inc() {
     }
 
-    public org.eclipse.microprofile.metrics.Metric getMetric() {
-        return metric;
-    }
-
-    public Metadata getMetadata() {
-        return metadata;
+    @Override
+    public void inc(long l) {
     }
 }

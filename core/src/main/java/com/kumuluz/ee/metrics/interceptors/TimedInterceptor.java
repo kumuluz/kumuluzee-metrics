@@ -17,11 +17,11 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.interceptors;
 
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
-import org.eclipse.microprofile.metrics.Metadata;
+import com.kumuluz.ee.metrics.utils.MetadataWithTags;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Timed;
@@ -71,10 +71,10 @@ public class TimedInterceptor {
 
     private <E extends Member & AnnotatedElement> Object applyInterceptor(InvocationContext context, E member)
             throws Exception {
-        Metadata metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, Timed.class);
-        Timer timer = applicationRegistry.getTimers().get(metadata.getName());
+        MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, Timed.class);
+        Timer timer = applicationRegistry.getTimers().get(metadata.getMetricID());
         if (timer == null) {
-            throw new IllegalStateException("No timer with name [" + metadata.getName() + "] found in registry ["
+            throw new IllegalStateException("No timer with ID [" + metadata.getMetricID() + "] found in registry ["
                     + applicationRegistry + "]");
         }
 

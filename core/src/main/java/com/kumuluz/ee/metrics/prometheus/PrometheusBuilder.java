@@ -17,7 +17,7 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.prometheus;
 
 import org.eclipse.microprofile.metrics.*;
@@ -59,9 +59,13 @@ public class PrometheusBuilder {
 
     public static void buildCounter(StringBuilder builder, String name, Counter counter, String description,
                                     String tags) {
-        getPromTypeLine(builder, name, "counter");
-        getPromHelpLine(builder, name, description);
-        getPromValueLine(builder, name, counter.getCount(), tags);
+        String lineName = name;
+        if (!lineName.endsWith("_total")) {
+            lineName = lineName + "_total";
+        }
+        getPromTypeLine(builder, lineName, "counter");
+        getPromHelpLine(builder, lineName, description);
+        getPromValueLine(builder, lineName, counter.getCount(), tags);
     }
 
     public static void buildTimer(StringBuilder builder, String name, Timer timer, String description, String tags) {
@@ -80,6 +84,21 @@ public class PrometheusBuilder {
     public static void buildMeter(StringBuilder builder, String name, Meter meter, String description, String tags) {
         buildCounting(builder, name, meter, description, tags);
         buildMetered(builder, name, meter, tags);
+    }
+
+    public static void buildConcurrentGauge(StringBuilder builder, String name, ConcurrentGauge concurrentGauge, String description, String tags) {
+        String lineName = name + "_current";
+        getPromTypeLine(builder, lineName, "gauge");
+        getPromHelpLine(builder, lineName, description);
+        getPromValueLine(builder, lineName, concurrentGauge.getCount(), tags);
+
+        lineName = name + "_min";
+        getPromTypeLine(builder, lineName, "gauge");
+        getPromValueLine(builder, lineName, concurrentGauge.getMin(), tags);
+
+        lineName = name + "_max";
+        getPromTypeLine(builder, lineName, "gauge");
+        getPromValueLine(builder, lineName, concurrentGauge.getMax(), tags);
     }
 
     private static void buildSampling(StringBuilder builder, String name, Sampling sampling, String description,
@@ -171,9 +190,9 @@ public class PrometheusBuilder {
                                          String appendUnit) {
 
         if (tags == null || tags.isEmpty()) {
-            tags = quantile.getKey() + "=\"" + quantile.getValue() + "\"";
+            tags = quantile.getTagName() + "=\"" + quantile.getTagValue() + "\"";
         } else {
-            tags = tags + "," + quantile.getKey() + "=\"" + quantile.getValue() + "\"";
+            tags = tags + "," + quantile.getTagName() + "=\"" + quantile.getTagValue() + "\"";
         }
         getPromValueLine(builder, name, value, tags, appendUnit);
     }
@@ -231,10 +250,8 @@ public class PrometheusBuilder {
      */
     private static String getPrometheusMetricName(String name) {
 
-        String out = name.replaceAll("(?<!^|:)(\\p{Upper})(?=\\p{Lower})", "_$1");
-        out = out.replaceAll("(?<=\\p{Lower})(\\p{Upper})", "_$1").toLowerCase();
-        out = out.replaceAll("[-_.\\s]+", "_");
-        out = out.replaceAll("^_*(.*?)_*$", "$1");
+        String out = name.replaceAll("[^a-zA-Z0-9_]", "_");
+        out = out.replaceAll("_+", "_");
 
         return out;
     }

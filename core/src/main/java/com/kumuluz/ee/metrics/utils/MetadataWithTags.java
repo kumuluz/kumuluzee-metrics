@@ -18,42 +18,37 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.metrics.api;
+package com.kumuluz.ee.metrics.utils;
 
-import org.eclipse.microprofile.metrics.Gauge;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
- * Forwards getValue calls to the object method.
+ * Holder object for {@link Metadata} and {@link Tag}[] objects.
  *
  * @author Urban Malc
- * @author Aljaž Blažej
- * @since 1.0.0
+ * @since 2.0.0
  */
-public class ForwardingGauge implements Gauge {
+public class MetadataWithTags {
 
-    private final Method method;
+    private Metadata metadata;
+    private Tag[] tags;
 
-    private final Object object;
-
-    public ForwardingGauge(Method method, Object object) {
-        this.method = method;
-        this.object = object;
-        method.setAccessible(true);
+    public MetadataWithTags(Metadata metadata, Tag[] tags) {
+        this.metadata = metadata;
+        this.tags = tags;
     }
 
-    @Override
-    public Object getValue() {
-        return invokeMethod(method, object);
+    public Metadata getMetadata() {
+        return metadata;
     }
 
-    private static Object invokeMethod(Method method, Object object) {
-        try {
-            return method.invoke(object);
-        } catch (IllegalAccessException | InvocationTargetException cause) {
-            throw new IllegalStateException("Error while calling method [" + method + "]", cause);
-        }
+    public Tag[] getTags() {
+        return tags;
+    }
+
+    public MetricID getMetricID() {
+        return MetricIdUtil.newMetricID(metadata.getName(), tags);
     }
 }

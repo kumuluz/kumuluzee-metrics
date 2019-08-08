@@ -20,13 +20,15 @@
  */
 package com.kumuluz.ee.metrics.interceptors;
 
+import com.kumuluz.ee.metrics.api.ConcurrentGaugeImpl;
 import com.kumuluz.ee.metrics.api.CounterImpl;
 import com.kumuluz.ee.metrics.api.MeterImpl;
 import com.kumuluz.ee.metrics.api.TimerImpl;
 import com.kumuluz.ee.metrics.interceptors.utils.RegisterMetricsBinding;
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
-import org.eclipse.microprofile.metrics.Metadata;
+import com.kumuluz.ee.metrics.utils.MetadataWithTags;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
@@ -87,16 +89,20 @@ public class RegisterMetricsInterceptor {
             }
 
             if (AnnotationMetadata.getAnnotation(bean, element, Counted.class) != null) {
-                Metadata m = AnnotationMetadata.buildMetadata(bean, element, Counted.class);
-                registry.register(m, new CounterImpl());
+                MetadataWithTags m = AnnotationMetadata.buildMetadata(bean, element, Counted.class);
+                registry.register(m.getMetadata(), new CounterImpl(), m.getTags());
             }
             if (AnnotationMetadata.getAnnotation(bean, element, Timed.class) != null) {
-                Metadata m = AnnotationMetadata.buildMetadata(bean, element, Timed.class);
-                registry.register(m, new TimerImpl());
+                MetadataWithTags m = AnnotationMetadata.buildMetadata(bean, element, Timed.class);
+                registry.register(m.getMetadata(), new TimerImpl(), m.getTags());
             }
             if (AnnotationMetadata.getAnnotation(bean, element, Metered.class) != null) {
-                Metadata m = AnnotationMetadata.buildMetadata(bean, element, Metered.class);
-                registry.register(m, new MeterImpl());
+                MetadataWithTags m = AnnotationMetadata.buildMetadata(bean, element, Metered.class);
+                registry.register(m.getMetadata(), new MeterImpl(), m.getTags());
+            }
+            if (AnnotationMetadata.getAnnotation(bean, element, ConcurrentGauge.class) != null) {
+                MetadataWithTags m = AnnotationMetadata.buildMetadata(bean, element, ConcurrentGauge.class);
+                registry.register(m.getMetadata(), new ConcurrentGaugeImpl(), m.getTags());
             }
 
             processedElements.add(element);

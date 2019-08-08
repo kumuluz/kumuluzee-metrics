@@ -17,7 +17,7 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.producers;
 
 import com.kumuluz.ee.metrics.api.MetricRegistryImpl;
@@ -49,7 +49,7 @@ public class MetricRegistryProducer {
     @Produces
     @RegistryType(type = MetricRegistry.Type.APPLICATION)
     public static MetricRegistry getApplicationRegistry() {
-        if(applicationRegistry == null) {
+        if (applicationRegistry == null) {
             applicationRegistry = new MetricRegistryImpl();
         }
 
@@ -59,7 +59,7 @@ public class MetricRegistryProducer {
     @Produces
     @RegistryType(type = MetricRegistry.Type.BASE)
     public static MetricRegistry getBaseRegistry() {
-        if(baseRegistry == null) {
+        if (baseRegistry == null) {
             baseRegistry = new MetricRegistryImpl();
         }
 
@@ -69,7 +69,7 @@ public class MetricRegistryProducer {
     @Produces
     @RegistryType(type = MetricRegistry.Type.VENDOR)
     public static MetricRegistry getVendorRegistry() {
-        if(vendorRegistry == null) {
+        if (vendorRegistry == null) {
             vendorRegistry = new MetricRegistryImpl();
         }
 

@@ -17,6 +17,12 @@
             <artifactId>kumuluzee-cdi-weld</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.kumuluz.ee.config</groupId>
+            <artifactId>kumuluzee-config-mp</artifactId>
+            <version>${kumuluzee-config-mp.version}</version>
+            <scope>provided</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
@@ -106,6 +112,7 @@
                     <dependenciesToScan>
                         <dependency>org.eclipse.microprofile.metrics:microprofile-metrics-api-tck</dependency>
                         <dependency>org.eclipse.microprofile.metrics:microprofile-metrics-rest-tck</dependency>
+                        <dependency>com.kumuluz.ee.metrics:kumuluzee-metrics-core</dependency>
                     </dependenciesToScan>
                     <environmentVariables>
                         <KUMULUZEE_METRICS_ADDDEFAULTTAGS>false</KUMULUZEE_METRICS_ADDDEFAULTTAGS>

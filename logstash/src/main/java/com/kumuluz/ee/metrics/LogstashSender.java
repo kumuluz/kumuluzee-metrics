@@ -24,13 +24,14 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kumuluz.ee.metrics.json.MetricsModule;
+import com.kumuluz.ee.metrics.json.models.MetricsCollection;
 import com.kumuluz.ee.metrics.json.models.MetricsPayload;
 import com.kumuluz.ee.metrics.producers.MetricRegistryProducer;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -79,13 +80,13 @@ public class LogstashSender implements Runnable {
                     outputStream = new BufferedOutputStream(socket.getOutputStream());
                 }
 
-                Map<String, MetricRegistry> registries = new HashMap<>();
-                registries.put("application", MetricRegistryProducer.getApplicationRegistry());
-                registries.put("base", MetricRegistryProducer.getBaseRegistry());
-                registries.put("vendor", MetricRegistryProducer.getVendorRegistry());
+                Map<String, MetricsCollection> registries = new HashMap<>();
+                registries.put("application", new MetricsCollection(MetricRegistryProducer.getApplicationRegistry()));
+                registries.put("base", new MetricsCollection(MetricRegistryProducer.getBaseRegistry()));
+                registries.put("vendor", new MetricsCollection(MetricRegistryProducer.getVendorRegistry()));
 
                 this.mapper.writeValue(outputStream, new MetricsPayload(registries));
-                outputStream.write("\n".getBytes("UTF-8"));
+                outputStream.write("\n".getBytes(StandardCharsets.UTF_8));
                 outputStream.flush();
 
                 this.currentRetryDelay = startRetryDelay;

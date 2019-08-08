@@ -22,9 +22,9 @@ package com.kumuluz.ee.metrics.logs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kumuluz.ee.metrics.json.MetricsModule;
+import com.kumuluz.ee.metrics.json.models.MetricsCollection;
 import com.kumuluz.ee.metrics.json.models.MetricsPayload;
 import com.kumuluz.ee.metrics.producers.MetricRegistryProducer;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,10 +54,10 @@ public class LogsSender implements Runnable {
     @Override
     public void run() {
         try {
-            Map<String, MetricRegistry> registries = new HashMap<>();
-            registries.put("application", MetricRegistryProducer.getApplicationRegistry());
-            registries.put("base", MetricRegistryProducer.getBaseRegistry());
-            registries.put("vendor", MetricRegistryProducer.getVendorRegistry());
+            Map<String, MetricsCollection> registries = new HashMap<>();
+            registries.put("application", new MetricsCollection(MetricRegistryProducer.getApplicationRegistry()));
+            registries.put("base", new MetricsCollection(MetricRegistryProducer.getBaseRegistry()));
+            registries.put("vendor", new MetricsCollection(MetricRegistryProducer.getVendorRegistry()));
 
             log.log(level, this.mapper.writer().writeValueAsString(new MetricsPayload(registries)));
         } catch (Exception exception) {

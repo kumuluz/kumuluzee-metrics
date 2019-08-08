@@ -38,7 +38,8 @@ import com.kumuluz.ee.metrics.api.MeterImpl;
 import com.kumuluz.ee.metrics.api.TimerImpl;
 import com.kumuluz.ee.metrics.filters.InstrumentedFilter;
 import com.kumuluz.ee.metrics.producers.MetricRegistryProducer;
-import com.kumuluz.ee.metrics.utils.ForwardingCounter;
+import com.kumuluz.ee.metrics.api.ForwardingCounter;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.*;
 
 import java.lang.management.ClassLoadingMXBean;
@@ -69,6 +70,14 @@ public class MetricsExtension implements Extension {
     public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
 
         log.info("Initialising Metrics common module.");
+
+        try {
+            ConfigProvider.getConfig();
+        } catch (IllegalStateException | NoClassDefFoundError e) {
+            log.severe("KumuluzEE Config MP is required in order for KumuluzEE Metrics to work correctly. " +
+                    "Please include it in your dependencies.");
+            throw e;
+        }
 
         ConfigurationUtil configurationUtil = ConfigurationUtil.getInstance();
 
@@ -135,89 +144,89 @@ public class MetricsExtension implements Extension {
     private void registerBaseMetrics() {
 
         Map<String, Metadata> baseMetadata = new HashMap<>();
-        baseMetadata.put("heap.used", new Metadata("memory.usedHeap",
-                "Used Heap Memory",
-                "Displays the amount of used heap memory in bytes.",
-                MetricType.GAUGE,
-                MetricUnits.BYTES));
-        baseMetadata.put("heap.committed", new Metadata("memory.committedHeap",
-                "Committed Heap Memory",
-                "Displays the amount of memory in bytes that is committed for the Java virtual " +
+        baseMetadata.put("heap.used", Metadata.builder().withName("memory.usedHeap")
+                .withDisplayName("Used Heap Memory")
+                .withDescription("Displays the amount of used heap memory in bytes.")
+                .withType(MetricType.GAUGE)
+                .withUnit(MetricUnits.BYTES).build());
+        baseMetadata.put("heap.committed", Metadata.builder().withName("memory.committedHeap")
+                .withDisplayName("Committed Heap Memory")
+                .withDescription("Displays the amount of memory in bytes that is committed for the Java virtual " +
                         "machine to use. This amount of memory is guaranteed for the Java virtual " +
-                        "machine to use.",
-                MetricType.GAUGE,
-                MetricUnits.BYTES));
-        baseMetadata.put("heap.max", new Metadata("memory.maxHeap",
-                "Max Heap Memory",
-                "Displays the maximum amount of heap memory in bytes that can be used for " +
+                        "machine to use.")
+                .withType(MetricType.GAUGE)
+                .withUnit(MetricUnits.BYTES).build());
+        baseMetadata.put("heap.max", Metadata.builder().withName("memory.maxHeap")
+                .withDisplayName("Max Heap Memory")
+                .withDescription("Displays the maximum amount of heap memory in bytes that can be used for " +
                         "memory management. This attribute displays -1 if the maximum heap " +
                         "memory size is undefined. This amount of memory is not guaranteed to be " +
                         "available for memory management if it is greater than the amount of " +
                         "committed memory. The Java virtual machine may fail to allocate memory " +
-                        "even if the amount of used memory does not exceed this maximum size.",
-                MetricType.GAUGE,
-                MetricUnits.BYTES));
-        baseMetadata.put("thread.count", new Metadata("thread.count",
-                "Thread Count",
-                "Displays the current number of live threads including both daemon and non-" +
-                        "daemon threads",
-                MetricType.COUNTER,
-                MetricUnits.NONE));
-        baseMetadata.put("thread.daemon.count", new Metadata("thread.daemon.count",
-                "Daemon Thread Count",
-                "Displays the current number of live daemon threads.",
-                MetricType.COUNTER,
-                MetricUnits.NONE));
-        baseMetadata.put("thread.max.count", new Metadata("thread.max.count",
-                "Peak Thread Count",
-                "Displays the peak live thread count since the Java virtual machine started or " +
-                        "peak was reset. This includes daemon and non-daemon threads.",
-                MetricType.COUNTER,
-                MetricUnits.NONE));
-        baseMetadata.put("uptime", new Metadata("jvm.uptime",
-                "JVM Uptime",
-                "Displays the start time of the Java virtual machine in milliseconds. This " +
+                        "even if the amount of used memory does not exceed this maximum size.")
+                .withType(MetricType.GAUGE)
+                .withUnit(MetricUnits.BYTES).build());
+        baseMetadata.put("thread.count", Metadata.builder().withName("thread.count")
+                .withDisplayName("Thread Count")
+                .withDescription("Displays the current number of live threads including both daemon and non-" +
+                        "daemon threads")
+                .withType(MetricType.GAUGE)
+                .withUnit(MetricUnits.NONE).build());
+        baseMetadata.put("thread.daemon.count", Metadata.builder().withName("thread.daemon.count")
+                .withDisplayName("Daemon Thread Count")
+                .withDescription("Displays the current number of live daemon threads.")
+                .withType(MetricType.GAUGE)
+                .withUnit(MetricUnits.NONE).build());
+        baseMetadata.put("thread.max.count", Metadata.builder().withName("thread.max.count")
+                .withDisplayName("Peak Thread Count")
+                .withDescription("Displays the peak live thread count since the Java virtual machine started or " +
+                        "peak was reset. This includes daemon and non-daemon threads.")
+                .withType(MetricType.GAUGE)
+                .withUnit(MetricUnits.NONE).build());
+        baseMetadata.put("uptime", Metadata.builder().withName("jvm.uptime")
+                .withDisplayName("JVM Uptime")
+                .withDescription("Displays the start time of the Java virtual machine in milliseconds. This " +
                         "attribute displays the approximate time when the Java virtual machine " +
-                        "started.",
-                MetricType.GAUGE,
-                MetricUnits.MILLISECONDS));
+                        "started.")
+                .withType(MetricType.GAUGE)
+                .withUnit(MetricUnits.MILLISECONDS).build());
         baseMetadata.put("classloader.totalLoadedClass.count",
-                new Metadata("classloader.totalLoadedClass.count",
-                        "Total Loaded Class Count",
-                        "Displays the total number of classes that have been loaded since the Java " +
-                                "virtual machine has started execution.",
-                        MetricType.COUNTER,
-                        MetricUnits.NONE));
+                Metadata.builder().withName("classloader.loadedClasses.total")
+                        .withDisplayName("Total Loaded Class Count")
+                        .withDescription("Displays the total number of classes that have been loaded since the Java " +
+                                "virtual machine has started execution.")
+                        .withType(MetricType.COUNTER)
+                        .withUnit(MetricUnits.NONE).build());
         baseMetadata.put("classloader.totalUnloadedClass.count",
-                new Metadata("classloader.totalUnloadedClass.count",
-                        "Total Unloaded Class Count",
-                        "Displays the total number of classes unloaded since the Java virtual machine " +
-                                "has started execution.",
-                        MetricType.COUNTER,
-                        MetricUnits.NONE));
+                Metadata.builder().withName("classloader.unloadedClasses.total")
+                        .withDisplayName("Total Unloaded Class Count")
+                        .withDescription("Displays the total number of classes unloaded since the Java virtual machine " +
+                                "has started execution.")
+                        .withType(MetricType.COUNTER)
+                        .withUnit(MetricUnits.NONE).build());
         baseMetadata.put("classloader.currentLoadedClass.count",
-                new Metadata("classloader.currentLoadedClass.count",
-                        "Current Loaded Class Count",
-                        "Displays the number of classes that are currently loaded in the Java virtual " +
-                                "machine.",
-                        MetricType.COUNTER,
-                        MetricUnits.NONE));
+                Metadata.builder().withName("classloader.loadedClasses.count")
+                        .withDisplayName("Current Loaded Class Count")
+                        .withDescription("Displays the number of classes that are currently loaded in the Java virtual " +
+                                "machine.")
+                        .withType(MetricType.GAUGE)
+                        .withUnit(MetricUnits.NONE).build());
         baseMetadata.put("cpu.availableProcessors",
-                new Metadata("cpu.availableProcessors",
-                        "Available Processors",
-                        "Displays the number of processors available to the Java virtual machine. This " +
-                                "value may change during a particular invocation of the virtual machine.",
-                        MetricType.GAUGE,
-                        MetricUnits.NONE));
+                Metadata.builder().withName("cpu.availableProcessors")
+                        .withDisplayName("Available Processors")
+                        .withDescription("Displays the number of processors available to the Java virtual machine. This " +
+                                "value may change during a particular invocation of the virtual machine.")
+                        .withType(MetricType.GAUGE)
+                        .withUnit(MetricUnits.NONE).build());
         baseMetadata.put("cpu.systemLoadAverage",
-                new Metadata("cpu.systemLoadAverage",
-                        "System Load Average",
-                        "Displays the system load average for the last minute. The system load average " +
+                Metadata.builder().withName("cpu.systemLoadAverage")
+                        .withDisplayName("System Load Average")
+                        .withDescription("Displays the system load average for the last minute. The system load average " +
                                 "is the sum of the number of runnable entities queued to the available " +
                                 "processors and the number of runnable entities running on the available " +
-                                "processors averaged over a period of time.",
-                        MetricType.GAUGE,
-                        MetricUnits.NONE));
+                                "processors averaged over a period of time.")
+                        .withType(MetricType.GAUGE)
+                        .withUnit(MetricUnits.NONE).build());
 
         MetricRegistry baseRegistry = MetricRegistryProducer.getBaseRegistry();
 
@@ -242,26 +251,26 @@ public class MetricsExtension implements Extension {
         for (Map.Entry<String, Metric> entry : metricSet.getMetrics().entrySet()) {
             if (entry.getKey().endsWith(".count")) {
                 String garbageCollectorName = entry.getKey().substring(0, entry.getKey().lastIndexOf(".count"));
-                Metadata metadata = new Metadata("gc." + garbageCollectorName + ".count",
-                        "Garbage Collection Count",
-                        "Displays the total number of collections that have occurred. This attribute lists " +
-                                "-1 if the collection count is undefined for this collector.",
-                        MetricType.COUNTER,
-                        MetricUnits.NONE);
-                registry.register(metadata, convertMetric(entry.getValue(), MetricType.COUNTER));
+                Metadata metadata = Metadata.builder().withName("gc.total")
+                        .withDisplayName("Garbage Collection Count")
+                        .withDescription("Displays the total number of collections that have occurred. This attribute lists " +
+                                "-1 if the collection count is undefined for this collector.")
+                        .withType(MetricType.COUNTER)
+                        .withUnit(MetricUnits.NONE).build();
+                registry.register(metadata, convertMetric(entry.getValue(), MetricType.COUNTER), new Tag("name", garbageCollectorName));
             } else if (entry.getKey().endsWith(".time")) {
                 String garbageCollectorName = entry.getKey().substring(0, entry.getKey().lastIndexOf(".time"));
-                Metadata metadata = new Metadata("gc." + garbageCollectorName + ".time",
-                        "Garbage Collection Time",
-                        "Displays the approximate accumulated collection elapsed time in milliseconds. " +
+                Metadata metadata = Metadata.builder().withName("gc.time")
+                        .withDisplayName("Garbage Collection Time")
+                        .withDescription("Displays the approximate accumulated collection elapsed time in milliseconds. " +
                                 "This attribute displays -1 if the collection elapsed time is undefined for this " +
                                 "collector. The Java virtual machine implementation may use a high resolution " +
                                 "timer to measure the elapsed time. This attribute may display the same value " +
                                 "even if the collection count has been incremented if the collection elapsed " +
-                                "time is very short.",
-                        MetricType.GAUGE,
-                        MetricUnits.MILLISECONDS);
-                registry.register(metadata, convertMetric(entry.getValue(), MetricType.GAUGE));
+                                "time is very short.")
+                        .withType(MetricType.GAUGE)
+                        .withUnit(MetricUnits.MILLISECONDS).build();
+                registry.register(metadata, convertMetric(entry.getValue(), MetricType.GAUGE), new Tag("name", garbageCollectorName));
             }
         }
     }
@@ -293,12 +302,7 @@ public class MetricsExtension implements Extension {
 
     private void registerNonDropwizardMetrics(MetricRegistry registry, Map<String, Metadata> metadataMap) {
         ClassLoadingMXBean classLoadingMXBean = ManagementFactory.getClassLoadingMXBean();
-        registry.register(metadataMap.get("classloader.currentLoadedClass.count"), new ForwardingCounter() {
-            @Override
-            public long getCount() {
-                return classLoadingMXBean.getLoadedClassCount();
-            }
-        });
+        registry.register(metadataMap.get("classloader.currentLoadedClass.count"), (Gauge) classLoadingMXBean::getLoadedClassCount);
         registry.register(metadataMap.get("classloader.totalLoadedClass.count"), new ForwardingCounter() {
             @Override
             public long getCount() {
@@ -313,24 +317,9 @@ public class MetricsExtension implements Extension {
         });
 
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-        registry.register(metadataMap.get("thread.count"), new ForwardingCounter() {
-            @Override
-            public long getCount() {
-                return threadMXBean.getThreadCount();
-            }
-        });
-        registry.register(metadataMap.get("thread.daemon.count"), new ForwardingCounter() {
-            @Override
-            public long getCount() {
-                return threadMXBean.getDaemonThreadCount();
-            }
-        });
-        registry.register(metadataMap.get("thread.max.count"), new ForwardingCounter() {
-            @Override
-            public long getCount() {
-                return threadMXBean.getPeakThreadCount();
-            }
-        });
+        registry.register(metadataMap.get("thread.count"), (Gauge) threadMXBean::getThreadCount);
+        registry.register(metadataMap.get("thread.daemon.count"), (Gauge) threadMXBean::getDaemonThreadCount);
+        registry.register(metadataMap.get("thread.max.count"), (Gauge) threadMXBean::getPeakThreadCount);
 
         OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
         registry.register(metadataMap.get("cpu.availableProcessors"),

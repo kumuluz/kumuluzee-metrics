@@ -17,7 +17,7 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics.filters;
 
 import com.kumuluz.ee.metrics.producers.MetricRegistryProducer;
@@ -48,11 +48,11 @@ public class InstrumentedFilter implements Filter {
     private Meter otherMeter;
     private Meter timeoutsMeter;
     private Meter errorsMeter;
-    private Counter activeRequests;
+    private ConcurrentGauge activeRequests;
     private Timer requestTimer;
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
+    public void init(FilterConfig filterConfig) {
 
         String instrumentationName = filterConfig.getInitParameter(PARAM_INSTRUMENTATION_NAME);
         List<Integer> meterStatusCodes = Arrays.stream(
@@ -62,45 +62,59 @@ public class InstrumentedFilter implements Filter {
 
         MetricRegistry metricsRegistry = MetricRegistryProducer.getVendorRegistry();
 
-        String metricPrefix = "webInstrumentation." + instrumentationName;
+        String metricPrefix = "web-instrumentation." + instrumentationName;
 
         this.metersByStatusCode = new ConcurrentHashMap<>(meterStatusCodes.size());
         for (Integer sc : meterStatusCodes) {
-            Metadata meterMetadata = new Metadata(MetricRegistry.name(metricPrefix, "status", sc.toString()),
-                    sc + " responses on " + instrumentationName,
-                    "Number of responses with status code " + sc + " on " + instrumentationName,
-                    MetricType.METERED, MetricUnits.NONE);
-            metersByStatusCode.put(sc, metricsRegistry.meter(meterMetadata));
+            Metadata meterMetadata = Metadata.builder()
+                    .withName(MetricRegistry.name(metricPrefix, "status"))
+                    .withDisplayName("Response status codes on " + instrumentationName)
+                    .withDescription("Number of responses with status codes on " + instrumentationName)
+                    .withType(MetricType.METERED)
+                    .build();
+            metersByStatusCode.put(sc,
+                    metricsRegistry.meter(meterMetadata, new Tag("statusCode", sc.toString())));
         }
 
-        Metadata otherMetadata = new Metadata(MetricRegistry.name(metricPrefix, "status", "other"),
-                "Other responses on " + instrumentationName,
-                "Number of responses with other status codes on " + instrumentationName,
-                MetricType.METERED, MetricUnits.NONE);
-        this.otherMeter = metricsRegistry.meter(otherMetadata);
+        Metadata meterMetadata = Metadata.builder()
+                .withName(MetricRegistry.name(metricPrefix, "status"))
+                .withDisplayName("Response other status codes on " + instrumentationName)
+                .withDescription("Number of responses with other status codes on " + instrumentationName)
+                .withType(MetricType.METERED)
+                .build();
+        this.otherMeter = metricsRegistry.meter(meterMetadata, new Tag("statusCode", "other"));
 
-        Metadata timeoutsMetadata = new Metadata(MetricRegistry.name(metricPrefix, "timeouts"),
-                "Timeouts on " + instrumentationName,
-                "Number of timeouts on " + instrumentationName,
-                MetricType.METERED, MetricUnits.NONE);
+        Metadata timeoutsMetadata = Metadata.builder()
+                .withName(MetricRegistry.name(metricPrefix, "timeouts"))
+                .withDisplayName("Timeouts on " + instrumentationName)
+                .withDescription("Number of timeouts on " + instrumentationName)
+                .withType(MetricType.METERED)
+                .build();
         this.timeoutsMeter = metricsRegistry.meter(timeoutsMetadata);
 
-        Metadata errorsMetadata = new Metadata(MetricRegistry.name(metricPrefix, "errors"),
-                "Errors on " + instrumentationName,
-                "Number of errors on " + instrumentationName,
-                MetricType.METERED, MetricUnits.NONE);
+        Metadata errorsMetadata = Metadata.builder()
+                .withName(MetricRegistry.name(metricPrefix, "errors"))
+                .withDisplayName("Errors on " + instrumentationName)
+                .withDescription("Number of errors on " + instrumentationName)
+                .withType(MetricType.METERED)
+                .build();
         this.errorsMeter = metricsRegistry.meter(errorsMetadata);
 
-        Metadata activeRequestsMetadata = new Metadata(MetricRegistry.name(metricPrefix, "activeRequests"),
-                "Active requests on " + instrumentationName,
-                "Number of active requests on " + instrumentationName,
-                MetricType.METERED, MetricUnits.NONE);
-        this.activeRequests = metricsRegistry.counter(activeRequestsMetadata);
+        Metadata activeRequestsMetadata = Metadata.builder()
+                .withName(MetricRegistry.name(metricPrefix, "activeRequests"))
+                .withDisplayName("Active requests on " + instrumentationName)
+                .withDescription("Number of active requests on " + instrumentationName)
+                .withType(MetricType.CONCURRENT_GAUGE)
+                .build();
+        this.activeRequests = metricsRegistry.concurrentGauge(activeRequestsMetadata);
 
-        Metadata timerMetadata = new Metadata(MetricRegistry.name(metricPrefix, "response"),
-                instrumentationName + " response timer",
-                "Response timer for " + instrumentationName,
-                MetricType.TIMER, MetricUnits.NANOSECONDS);
+        Metadata timerMetadata = Metadata.builder()
+                .withName(MetricRegistry.name(metricPrefix, "response"))
+                .withDisplayName(instrumentationName + " response timer")
+                .withDescription("Response timer for " + instrumentationName)
+                .withType(MetricType.TIMER)
+                .withUnit(MetricUnits.NANOSECONDS)
+                .build();
         this.requestTimer = metricsRegistry.timer(timerMetadata);
 
     }
@@ -152,12 +166,12 @@ public class InstrumentedFilter implements Filter {
         private Timer.Context context;
         private boolean done = false;
 
-        public AsyncResultListener(Timer.Context context) {
+        AsyncResultListener(Timer.Context context) {
             this.context = context;
         }
 
         @Override
-        public void onComplete(AsyncEvent event) throws IOException {
+        public void onComplete(AsyncEvent event) {
             if (!done) {
                 HttpServletResponse suppliedResponse = (HttpServletResponse) event.getSuppliedResponse();
                 context.stop();
@@ -167,7 +181,7 @@ public class InstrumentedFilter implements Filter {
         }
 
         @Override
-        public void onTimeout(AsyncEvent event) throws IOException {
+        public void onTimeout(AsyncEvent event) {
             context.stop();
             activeRequests.dec();
             timeoutsMeter.mark();
@@ -175,7 +189,7 @@ public class InstrumentedFilter implements Filter {
         }
 
         @Override
-        public void onError(AsyncEvent event) throws IOException {
+        public void onError(AsyncEvent event) {
             context.stop();
             activeRequests.dec();
             errorsMeter.mark();
@@ -183,7 +197,7 @@ public class InstrumentedFilter implements Filter {
         }
 
         @Override
-        public void onStartAsync(AsyncEvent event) throws IOException {
+        public void onStartAsync(AsyncEvent event) {
 
         }
     }

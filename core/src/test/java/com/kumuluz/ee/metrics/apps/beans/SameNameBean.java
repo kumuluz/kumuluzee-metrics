@@ -17,33 +17,37 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
-package com.kumuluz.ee.metrics.utils;
+ */
+package com.kumuluz.ee.metrics.apps.beans;
 
 import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.annotation.Metric;
+
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
 
 /**
- * Microprofile Counter with unimplemented getCount().
+ * Bean with two counters sharing the same name but different tags.
  *
  * @author Urban Malc
- * @author Aljaž Blažej
- * @since 1.0.0
+ * @since 2.0.0
  */
-public abstract class ForwardingCounter implements Counter {
+@RequestScoped
+public class SameNameBean {
 
-    @Override
-    public void inc() {
+    @Inject
+    @Metric(absolute = true, name = "sameName", tags = {"test=1"})
+    private Counter c1;
+
+    @Inject
+    @Metric(absolute = true, name = "sameName", tags = {"test=2"})
+    private Counter c2;
+
+    public void increaseFirst() {
+        c1.inc();
     }
 
-    @Override
-    public void inc(long l) {
-    }
-
-    @Override
-    public void dec() {
-    }
-
-    @Override
-    public void dec(long l) {
+    public void increaseSecond() {
+        c2.inc();
     }
 }
