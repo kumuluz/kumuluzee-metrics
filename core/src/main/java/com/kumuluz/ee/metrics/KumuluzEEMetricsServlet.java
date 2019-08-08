@@ -53,15 +53,12 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
 
     private static final String APPLICATION_JSON = "application/json";
 
-    private ObjectMapper metricMapper;
-    private ObjectMapper metadataMapper;
+    private static ObjectMapper metricMapper = new ObjectMapper().registerModule(new MetricsModule(false));
+    private static ObjectMapper metadataMapper = new ObjectMapper().registerModule(new MetricsModule(true));
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-
-        this.metricMapper = new ObjectMapper().registerModule(new MetricsModule(false));
-        this.metadataMapper = new ObjectMapper().registerModule(new MetricsModule(true));
     }
 
     @Override
@@ -162,7 +159,8 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
 
     private ObjectWriter getWriter(HttpServletRequest request, RequestInfo.RequestType requestType) {
         boolean prettyPrintOff = "false".equals(request.getParameter("pretty"));
-        ObjectMapper mapper = (requestType == RequestInfo.RequestType.JSON_METADATA) ? this.metadataMapper : this.metricMapper;
+        ObjectMapper mapper = (requestType == RequestInfo.RequestType.JSON_METADATA) ? this.metadataMapper :
+                this.metricMapper;
 
         return prettyPrintOff ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter();
     }

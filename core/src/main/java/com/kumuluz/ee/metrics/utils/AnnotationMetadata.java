@@ -29,7 +29,10 @@ import org.eclipse.microprofile.metrics.annotation.*;
 
 import javax.enterprise.inject.spi.InjectionPoint;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -82,7 +85,7 @@ public class AnnotationMetadata {
         String description = "";
         String unit = MetricUnits.NONE;
         boolean reusable = false;
-        if (Counted.class.isInstance(annotation)) {
+        if (annotation != null && Counted.class.isInstance(annotation)) {
             Counted a = (Counted) annotation;
             type = MetricType.COUNTER;
             absolute = a.absolute();
@@ -92,7 +95,7 @@ public class AnnotationMetadata {
             description = a.description();
             unit = a.unit();
             reusable = a.reusable();
-        } else if (Timed.class.isInstance(annotation)) {
+        } else if (annotation != null && Timed.class.isInstance(annotation)) {
             Timed a = (Timed) annotation;
             type = MetricType.TIMER;
             absolute = a.absolute();
@@ -102,7 +105,7 @@ public class AnnotationMetadata {
             description = a.description();
             unit = a.unit();
             reusable = a.reusable();
-        } else if (Metered.class.isInstance(annotation)) {
+        } else if (annotation != null && Metered.class.isInstance(annotation)) {
             Metered a = (Metered) annotation;
             type = MetricType.METERED;
             absolute = a.absolute();
@@ -112,7 +115,7 @@ public class AnnotationMetadata {
             description = a.description();
             unit = a.unit();
             reusable = a.reusable();
-        } else if (ConcurrentGauge.class.isInstance(annotation)) {
+        } else if (annotation != null && ConcurrentGauge.class.isInstance(annotation)) {
             ConcurrentGauge a = (ConcurrentGauge) annotation;
             type = MetricType.CONCURRENT_GAUGE;
             absolute = a.absolute();
@@ -122,7 +125,7 @@ public class AnnotationMetadata {
             description = a.description();
             unit = a.unit();
             reusable = a.reusable();
-        } else if (Gauge.class.isInstance(annotation)) {
+        } else if (annotation != null && Gauge.class.isInstance(annotation)) {
             Gauge a = (Gauge) annotation;
             type = MetricType.GAUGE;
             absolute = a.absolute();
@@ -131,7 +134,7 @@ public class AnnotationMetadata {
             displayName = a.displayName();
             description = a.description();
             unit = a.unit();
-        } else if (Metric.class.isInstance(annotation)) {
+        } else if (annotation != null && Metric.class.isInstance(annotation)) {
             Metric a = (Metric) annotation;
             type = getMetricType(member);
             absolute = a.absolute();

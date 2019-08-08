@@ -17,7 +17,7 @@
  *  out of or in connection with the software or the use or other dealings in the
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
-*/
+ */
 package com.kumuluz.ee.metrics;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -96,7 +96,10 @@ public class LogstashSender implements Runnable {
                 socket = null;
                 try {
                     Thread.sleep(currentRetryDelay);
-                } catch (InterruptedException ignored) {
+                } catch (InterruptedException ie) {
+                    log.severe("Interrupted: " + ie.getMessage());
+                    // Restore interrupted state...
+                    Thread.currentThread().interrupt();
                 }
 
                 // exponential increase, limited by maxRetryDelay
