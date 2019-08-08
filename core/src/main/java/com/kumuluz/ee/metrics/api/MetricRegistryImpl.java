@@ -26,6 +26,8 @@ import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.*;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Microprofile MetricRegistry implementation.
@@ -36,11 +38,11 @@ import java.util.*;
  */
 public class MetricRegistryImpl extends MetricRegistry {
 
-    private Map<MetricID, Metric> metricsStorage;
+    private ConcurrentMap<MetricID, Metric> metricsStorage;
     private Map<String, Metadata> metadataStorage;
 
     public MetricRegistryImpl() {
-        this.metricsStorage = new HashMap<>();
+        this.metricsStorage = new ConcurrentHashMap<>();
         this.metadataStorage = new HashMap<>();
     }
 
