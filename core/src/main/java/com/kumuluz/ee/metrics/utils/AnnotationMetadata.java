@@ -29,7 +29,9 @@ import org.eclipse.microprofile.metrics.annotation.*;
 
 import javax.enterprise.inject.spi.InjectionPoint;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Member;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -65,14 +67,14 @@ public class AnnotationMetadata {
     }
 
     public static <E extends Member & AnnotatedElement, T extends Annotation> MetadataWithTags buildMetadata
-            (Class<?> bean, E element, Class<T> annotationClass) {
+            (Class<?> bean, E element, Class<T> annotationClass, MetricType metricType) {
         T annotation = getAnnotation(bean, element, annotationClass);
         boolean fromElement = element.isAnnotationPresent(annotationClass);
-        return buildMetadata(bean, element, annotation, fromElement);
+        return buildMetadata(bean, element, annotation, fromElement, metricType);
     }
 
     private static <M extends Member, T extends Annotation> MetadataWithTags buildMetadata(Class<?> bean, M member,
-                                                                                           T annotation, boolean fromElement) {
+                                                                                           T annotation, boolean fromElement, MetricType metricType) {
 
         MetricType type;
         boolean absolute;
@@ -133,7 +135,7 @@ public class AnnotationMetadata {
             unit = a.unit();
         } else if (annotation instanceof Metric) {
             Metric a = (Metric) annotation;
-            type = getMetricType(member);
+            type = metricType;
             absolute = a.absolute();
             name = a.name();
             tags = a.tags();
@@ -142,7 +144,7 @@ public class AnnotationMetadata {
             unit = a.unit();
         } else {
             absolute = false;
-            type = getMetricType(member);
+            type = metricType;
         }
 
         String finalName;
@@ -183,18 +185,14 @@ public class AnnotationMetadata {
         metadataBuilder.withDisplayName(displayName);
         metadataBuilder.withDescription(description);
         metadataBuilder.withUnit(unit);
-        if (reusable) {
-            metadataBuilder.reusable();
-        } else {
-            metadataBuilder.notReusable();
-        }
+        metadataBuilder.reusable(reusable);
 
         return new MetadataWithTags(metadataBuilder.build(), parsedTags);
     }
 
-    public static MetadataWithTags buildProducerMetadata(InjectionPoint injectionPoint) {
+    public static MetadataWithTags buildProducerMetadata(InjectionPoint injectionPoint, MetricType metricType) {
         return buildMetadata(injectionPoint.getMember().getDeclaringClass(), injectionPoint.getMember(),
-                injectionPoint.getAnnotated().getAnnotation(Metric.class), true);
+                injectionPoint.getAnnotated().getAnnotation(Metric.class), true, metricType);
     }
 
     private static String memberName(Member member) {
@@ -204,13 +202,4 @@ public class AnnotationMetadata {
             return member.getName();
     }
 
-    private static <E extends Member> MetricType getMetricType(E element) {
-        if (element instanceof Field) {
-            return MetricType.from(((Field) element).getType());
-        } else if (element instanceof Method) {
-            return MetricType.from(((Method) element).getReturnType());
-        } else {
-            return MetricType.from(element.getClass());
-        }
-    }
 }

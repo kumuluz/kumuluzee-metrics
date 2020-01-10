@@ -26,6 +26,7 @@ import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
 import com.kumuluz.ee.metrics.utils.MetadataWithTags;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
 
 import javax.annotation.Priority;
 import javax.inject.Inject;
@@ -61,7 +62,7 @@ public class GaugeInterceptor {
             for (Method method : type.getDeclaredMethods()) {
                 if (method.isAnnotationPresent(org.eclipse.microprofile.metrics.annotation.Gauge.class)) {
                     MetadataWithTags metadata = AnnotationMetadata.buildMetadata(type, method,
-                            org.eclipse.microprofile.metrics.annotation.Gauge.class);
+                            org.eclipse.microprofile.metrics.annotation.Gauge.class, MetricType.GAUGE);
                     Gauge gauge = applicationRegistry.getGauges().get(metadata.getMetricID());
 
                     if (gauge == null) {

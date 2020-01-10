@@ -23,6 +23,7 @@ package com.kumuluz.ee.metrics.interceptors;
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
 import com.kumuluz.ee.metrics.utils.MetadataWithTags;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
@@ -71,7 +72,7 @@ public class TimedInterceptor {
 
     private <E extends Member & AnnotatedElement> Object applyInterceptor(InvocationContext context, E member)
             throws Exception {
-        MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, Timed.class);
+        MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, Timed.class, MetricType.TIMER);
         Timer timer = applicationRegistry.getTimers().get(metadata.getMetricID());
         if (timer == null) {
             throw new IllegalStateException("No timer with ID [" + metadata.getMetricID() + "] found in registry ["

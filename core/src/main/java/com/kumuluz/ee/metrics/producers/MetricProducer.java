@@ -49,38 +49,38 @@ public class MetricProducer {
 
     @Produces
     public Meter produceMeter(InjectionPoint injectionPoint) {
-        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint);
+        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint, MetricType.METERED);
         return applicationRegistry.meter(metadataWithTags.getMetadata(), metadataWithTags.getTags());
     }
 
     @Produces
     public Timer produceTimer(InjectionPoint injectionPoint) {
-        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint);
+        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint, MetricType.TIMER);
         return applicationRegistry.timer(metadataWithTags.getMetadata(), metadataWithTags.getTags());
     }
 
     @Produces
     public Counter produceCounter(InjectionPoint injectionPoint) {
-        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint);
+        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint, MetricType.COUNTER);
         return applicationRegistry.counter(metadataWithTags.getMetadata(), metadataWithTags.getTags());
     }
 
     @Produces
     public ConcurrentGauge produceConcurrentGauge(InjectionPoint injectionPoint) {
-        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint);
+        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint, MetricType.CONCURRENT_GAUGE);
         return applicationRegistry.concurrentGauge(metadataWithTags.getMetadata(), metadataWithTags.getTags());
     }
 
     @Produces
     public Histogram produceHistogram(InjectionPoint injectionPoint) {
-        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint);
+        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint, MetricType.HISTOGRAM);
         return applicationRegistry.histogram(metadataWithTags.getMetadata(), metadataWithTags.getTags());
     }
 
     @SuppressWarnings("unchecked")
     @Produces
     public <T> Gauge<T> produceGauge(InjectionPoint injectionPoint) {
-        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint);
+        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint, MetricType.GAUGE);
 
         return () -> (T) applicationRegistry.getGauges().get(metadataWithTags.getMetricID()).getValue();
     }
