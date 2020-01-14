@@ -79,7 +79,7 @@ public class MetricProducer {
 
     @SuppressWarnings("unchecked")
     @Produces
-    public <T> Gauge<T> produceGauge(InjectionPoint injectionPoint) {
+    public <T extends Number> Gauge<T> produceGauge(InjectionPoint injectionPoint) {
         MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint, MetricType.GAUGE);
 
         return () -> (T) applicationRegistry.getGauges().get(metadataWithTags.getMetricID()).getValue();
