@@ -24,6 +24,7 @@ import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
 import com.kumuluz.ee.metrics.utils.MetadataWithTags;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 
 import javax.annotation.Priority;
@@ -71,7 +72,7 @@ public class MeteredInterceptor {
 
     private <E extends Member & AnnotatedElement> Object applyInterceptor(InvocationContext context, E member)
             throws Exception {
-        MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, Metered.class);
+        MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, Metered.class, MetricType.METERED);
         Meter meter = applicationRegistry.getMeters().get(metadata.getMetricID());
         if (meter == null) {
             throw new IllegalStateException("No meter with ID [" + metadata.getMetricID() + "] found in registry ["

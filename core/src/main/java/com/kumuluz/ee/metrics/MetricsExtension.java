@@ -293,7 +293,7 @@ public class MetricsExtension implements Extension {
                     }
                 };
             } else {
-                return (Gauge<Object>) ((com.codahale.metrics.Gauge) metric)::getValue;
+                return (Gauge<Number>) ((com.codahale.metrics.Gauge<Number>) metric)::getValue;
             }
         } else {
             return null;

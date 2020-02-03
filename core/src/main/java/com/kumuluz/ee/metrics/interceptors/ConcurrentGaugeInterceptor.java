@@ -23,6 +23,7 @@ package com.kumuluz.ee.metrics.interceptors;
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
 import com.kumuluz.ee.metrics.utils.MetadataWithTags;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 
 import javax.annotation.Priority;
@@ -70,7 +71,7 @@ public class ConcurrentGaugeInterceptor {
 
     private <E extends Member & AnnotatedElement> Object applyInterceptor(InvocationContext context, E member)
             throws Exception {
-        MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, ConcurrentGauge.class);
+        MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, ConcurrentGauge.class, MetricType.CONCURRENT_GAUGE);
         org.eclipse.microprofile.metrics.ConcurrentGauge concurrentGauge = applicationRegistry.getConcurrentGauges()
                 .get(metadata.getMetricID());
         if (concurrentGauge == null) {

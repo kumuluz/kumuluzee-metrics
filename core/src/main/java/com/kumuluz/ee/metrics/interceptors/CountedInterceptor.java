@@ -24,6 +24,7 @@ import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
 import com.kumuluz.ee.metrics.utils.MetadataWithTags;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 import javax.annotation.Priority;
@@ -71,7 +72,7 @@ public class CountedInterceptor {
 
     private <E extends Member & AnnotatedElement> Object applyInterceptor(InvocationContext context, E member)
             throws Exception {
-        MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, Counted.class);
+        MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean.getBeanClass(), member, Counted.class, MetricType.COUNTER);
         Counter counter = applicationRegistry.getCounters().get(metadata.getMetricID());
         if (counter == null) {
             throw new IllegalStateException("No counter with ID [" + metadata.getMetricID() + "] found in registry ["

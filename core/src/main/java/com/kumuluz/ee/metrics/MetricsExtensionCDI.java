@@ -29,6 +29,7 @@ import com.kumuluz.ee.metrics.utils.MetadataWithTags;
 import com.kumuluz.ee.metrics.utils.ProducerMemberRegistration;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.*;
 
 import javax.enterprise.event.Observes;
@@ -36,6 +37,7 @@ import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.*;
 import javax.enterprise.util.AnnotationLiteral;
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.LinkedList;
@@ -84,7 +86,7 @@ public class MetricsExtensionCDI implements Extension {
             Field member = ppf.getAnnotatedProducerField().getJavaMember();
             Class<?> bean = member.getDeclaringClass();
             MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean, member,
-                    org.eclipse.microprofile.metrics.annotation.Metric.class);
+                    org.eclipse.microprofile.metrics.annotation.Metric.class, getMetricType(member));
             producerMembers.add(new ProducerMemberRegistration(ppf.getBean(), ppf.getAnnotatedProducerField(),
                     metadata));
         }
@@ -96,7 +98,7 @@ public class MetricsExtensionCDI implements Extension {
             Method member = ppm.getAnnotatedProducerMethod().getJavaMember();
             Class<?> bean = member.getDeclaringClass();
             MetadataWithTags metadata = AnnotationMetadata.buildMetadata(bean, member,
-                    org.eclipse.microprofile.metrics.annotation.Metric.class);
+                    org.eclipse.microprofile.metrics.annotation.Metric.class, getMetricType(member));
             producerMembers.add(new ProducerMemberRegistration(ppm.getBean(), ppm.getAnnotatedProducerMethod(),
                     metadata));
         }
@@ -127,5 +129,15 @@ public class MetricsExtensionCDI implements Extension {
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager manager, Type type, Bean<?> bean) {
         return (T) manager.getReference(bean, type, manager.createCreationalContext(bean));
+    }
+
+    private static <E extends Member> MetricType getMetricType(E element) {
+        if (element instanceof Field) {
+            return MetricType.from(((Field) element).getType());
+        } else if (element instanceof Method) {
+            return MetricType.from(((Method) element).getReturnType());
+        } else {
+            return MetricType.from(element.getClass());
+        }
     }
 }

@@ -32,7 +32,7 @@ import java.lang.reflect.Method;
  * @author Aljaž Blažej
  * @since 1.0.0
  */
-public class ForwardingGauge implements Gauge {
+public class ForwardingGauge implements Gauge<Number> {
 
     private final Method method;
 
@@ -45,8 +45,8 @@ public class ForwardingGauge implements Gauge {
     }
 
     @Override
-    public Object getValue() {
-        return invokeMethod(method, object);
+    public Number getValue() {
+        return (Number) invokeMethod(method, object);
     }
 
     private static Object invokeMethod(Method method, Object object) {
