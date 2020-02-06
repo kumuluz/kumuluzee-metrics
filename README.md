@@ -16,7 +16,7 @@ of application specific metrics, as described below.
 The implementation is based on Dropwizard metrics. More information about their implementation can be found on
 [github](https://github.com/dropwizard/metrics) or their [official page](http://metrics.dropwizard.io).
 
-KumuluzEE Metrics is fully compliant with [MicroProfile Metrics 2.0](https://microprofile.io/project/eclipse/microprofile-metrics).
+KumuluzEE Metrics is fully compliant with [MicroProfile Metrics 2.2.1](https://microprofile.io/project/eclipse/microprofile-metrics).
 
 ## Usage
 
