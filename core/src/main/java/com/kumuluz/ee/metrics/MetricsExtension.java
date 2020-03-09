@@ -32,13 +32,9 @@ import com.kumuluz.ee.common.config.EeConfig;
 import com.kumuluz.ee.common.dependencies.*;
 import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
-import com.kumuluz.ee.metrics.api.CounterImpl;
-import com.kumuluz.ee.metrics.api.HistogramImpl;
-import com.kumuluz.ee.metrics.api.MeterImpl;
-import com.kumuluz.ee.metrics.api.TimerImpl;
+import com.kumuluz.ee.metrics.api.*;
 import com.kumuluz.ee.metrics.filters.InstrumentedFilter;
 import com.kumuluz.ee.metrics.producers.MetricRegistryProducer;
-import com.kumuluz.ee.metrics.api.ForwardingCounter;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.*;
 
