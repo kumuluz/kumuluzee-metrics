@@ -212,6 +212,8 @@ public class PrometheusMetricWriter {
                         conversionFactor, tags, appendUnit);
             } else if (Timer.class.isInstance(metric)) {
                 PrometheusBuilder.buildTimer(builder, metricNamePrometheus, (Timer) metric, description, tags);
+            } else if (SimpleTimer.class.isInstance(metric)){
+                PrometheusBuilder.buildSimpleTimer(builder, metricNamePrometheus, (SimpleTimer) metric, description, tags);
             } else if (Histogram.class.isInstance(metric)) {
                 PrometheusBuilder.buildHistogram(builder, metricNamePrometheus, (Histogram) metric, description,
                         conversionFactor, tags, appendUnit);

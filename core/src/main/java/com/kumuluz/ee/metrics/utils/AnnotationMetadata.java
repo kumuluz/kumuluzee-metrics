@@ -104,6 +104,16 @@ public class AnnotationMetadata {
             description = a.description();
             unit = a.unit();
             reusable = a.reusable();
+        } else if (annotation instanceof SimplyTimed) {
+            SimplyTimed a = (SimplyTimed) annotation;
+            type = MetricType.SIMPLE_TIMER;
+            absolute = a.absolute();
+            name = a.name();
+            tags = a.tags();
+            displayName = a.displayName();
+            description = a.description();
+            unit = a.unit();
+            reusable = a.reusable();
         } else if (annotation instanceof Metered) {
             Metered a = (Metered) annotation;
             type = MetricType.METERED;

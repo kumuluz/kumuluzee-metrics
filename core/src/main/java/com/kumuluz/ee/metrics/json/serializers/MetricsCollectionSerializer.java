@@ -101,6 +101,11 @@ public class MetricsCollectionSerializer extends StdSerializer<MetricsCollection
             Snapshot snapshot = timer.getSnapshot();
             serializeMetered(timer, compositeSuffix, json);
             serializeSnapshot(snapshot, compositeSuffix, json);
+        } else if (metric instanceof SimpleTimer) {
+            SimpleTimer simpleTimer = (SimpleTimer) metric;
+
+            json.writeObjectField("count" + compositeSuffix, simpleTimer.getCount());
+            json.writeObjectField("elapsedTime" + compositeSuffix, simpleTimer.getElapsedTime());
         } else if (metric instanceof ConcurrentGauge) {
             ConcurrentGauge concurrentGauge = (ConcurrentGauge) metric;
 

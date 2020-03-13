@@ -75,6 +75,17 @@ public class PrometheusBuilder {
         buildSampling(builder, name, timer, description, conversionFactor, tags, "_seconds");
     }
 
+    public static void buildSimpleTimer(StringBuilder builder, String name, SimpleTimer simpleTimer, String description, String tags) {
+        buildCounting(builder, name, simpleTimer, description, tags);
+        double conversionFactor = 0.000000001;
+
+        String lineName = name + "_elapsedTime";
+        double value = simpleTimer.getElapsedTime().toNanos() * conversionFactor;
+
+        getPromTypeLine(builder, lineName, "simpleTimer");
+        getPromValueLine(builder, lineName, value, tags, "_seconds");
+    }
+
     public static void buildHistogram(StringBuilder builder, String name, Histogram histogram, String description,
                                       Double conversionFactor, String tags, String appendUnit) {
         // Build Histogram

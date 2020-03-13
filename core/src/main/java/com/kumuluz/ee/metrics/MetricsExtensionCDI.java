@@ -67,7 +67,7 @@ public class MetricsExtensionCDI implements Extension {
             new AnnotationLiteral<RegisterMetricsBinding>() {
             };
 
-    private <X> void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class, ConcurrentGauge.class})
+    private <X> void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class})
                                              ProcessAnnotatedType<X> pat) {
         AnnotatedTypeDecorator<X> decoratedType = new AnnotatedTypeDecorator<>(pat.getAnnotatedType(),
                 REGISTER_METRICS_BINDING);

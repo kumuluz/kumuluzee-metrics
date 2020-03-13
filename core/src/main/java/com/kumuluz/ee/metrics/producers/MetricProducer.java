@@ -60,6 +60,12 @@ public class MetricProducer {
     }
 
     @Produces
+    public SimpleTimer produceSimpleTimer(InjectionPoint injectionPoint){
+        MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint, MetricType.SIMPLE_TIMER);
+        return applicationRegistry.simpleTimer(metadataWithTags.getMetadata(), metadataWithTags.getTags());
+    }
+
+    @Produces
     public Counter produceCounter(InjectionPoint injectionPoint) {
         MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint, MetricType.COUNTER);
         return applicationRegistry.counter(metadataWithTags.getMetadata(), metadataWithTags.getTags());

@@ -186,6 +186,26 @@ public class MetricRegistryImpl extends MetricRegistry {
     }
 
     @Override
+    public SimpleTimer simpleTimer(String name) {
+        return simpleTimer(name, new Tag[0]);
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(String name, Tag... tags) {
+        return simpleTimer(Metadata.builder().withName(name).withType(MetricType.SIMPLE_TIMER).build(), tags);
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(Metadata metadata) {
+        return simpleTimer(metadata, new Tag[0]);
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(Metadata metadata, Tag... tags) {
+        return getOrAdd(new SimpleTimerImpl(), SimpleTimer.class, metadata, tags);
+    }
+
+    @Override
     public synchronized boolean remove(String name) {
 
         List<MetricID> toRemove = new LinkedList<>();
@@ -302,6 +322,16 @@ public class MetricRegistryImpl extends MetricRegistry {
     @Override
     public SortedMap<MetricID, Timer> getTimers(MetricFilter metricFilter) {
         return getMetricsOfType(metricFilter, Timer.class);
+    }
+
+    @Override
+    public SortedMap<MetricID, SimpleTimer> getSimpleTimers() {
+        return getSimpleTimers(MetricFilter.ALL);
+    }
+
+    @Override
+    public SortedMap<MetricID, SimpleTimer> getSimpleTimers(MetricFilter metricFilter) {
+        return getMetricsOfType(metricFilter, SimpleTimer.class);
     }
 
     @Override

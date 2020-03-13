@@ -20,19 +20,13 @@
  */
 package com.kumuluz.ee.metrics.interceptors;
 
-import com.kumuluz.ee.metrics.api.ConcurrentGaugeImpl;
-import com.kumuluz.ee.metrics.api.CounterImpl;
-import com.kumuluz.ee.metrics.api.MeterImpl;
-import com.kumuluz.ee.metrics.api.TimerImpl;
+import com.kumuluz.ee.metrics.api.*;
 import com.kumuluz.ee.metrics.interceptors.utils.RegisterMetricsBinding;
 import com.kumuluz.ee.metrics.utils.AnnotationMetadata;
 import com.kumuluz.ee.metrics.utils.MetadataWithTags;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.Timed;
+import org.eclipse.microprofile.metrics.annotation.*;
 
 import javax.annotation.Priority;
 import javax.inject.Inject;
@@ -96,6 +90,10 @@ public class RegisterMetricsInterceptor {
             if (AnnotationMetadata.getAnnotation(bean, element, Timed.class) != null) {
                 MetadataWithTags m = AnnotationMetadata.buildMetadata(bean, element, Timed.class, MetricType.TIMER);
                 registry.register(m.getMetadata(), new TimerImpl(), m.getTags());
+            }
+            if (AnnotationMetadata.getAnnotation(bean, element, SimplyTimed.class) != null) {
+                MetadataWithTags m = AnnotationMetadata.buildMetadata(bean, element, SimplyTimed.class, MetricType.SIMPLE_TIMER);
+                registry.register(m.getMetadata(), new SimpleTimerImpl(), m.getTags());
             }
             if (AnnotationMetadata.getAnnotation(bean, element, Metered.class) != null) {
                 MetadataWithTags m = AnnotationMetadata.buildMetadata(bean, element, Metered.class, MetricType.METERED);
