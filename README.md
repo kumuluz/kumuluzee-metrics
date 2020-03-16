@@ -182,6 +182,37 @@ public void longLasting() {
 }
 ```
 
+### SimpleTimer
+
+A `SimpleTimer` measures the total amount of time a method or block of code has spent executing. Here is an example of a method simple timer:
+
+```java
+@SimplyTimed(name = "simply_timed_method")
+public void simplyTimedMethod() {
+    ...
+}
+```
+
+In the following example, only a part of the method is timed:
+
+```java
+@Inject
+@Metric(name = "simply_timed_method")
+private SimpleTimer simpleTimer;
+
+public void simplyTimedMethod() {
+    ...
+    final SimpleTimer.Context context = simpleTimer.time();
+    try {
+        // complex computations
+        return;
+    } finally {
+        context.stop();
+    }
+    ...
+}
+```
+
 ## Metric names & metadata
 
 Each metric name is prepended with the fully qualified class name, so they can be easily differentiated between classes
