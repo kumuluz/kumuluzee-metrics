@@ -82,7 +82,7 @@ public class PrometheusBuilder {
         String lineName = name + "_elapsedTime";
         double value = simpleTimer.getElapsedTime().toNanos() * conversionFactor;
 
-        getPromTypeLine(builder, lineName, "simpleTimer");
+        getPromTypeLine(builder, lineName, "simpletimer");
         getPromValueLine(builder, lineName, value, tags, "_seconds");
     }
 
