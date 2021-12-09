@@ -35,7 +35,6 @@ import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import com.kumuluz.ee.metrics.api.*;
 import com.kumuluz.ee.metrics.filters.InstrumentedFilter;
 import com.kumuluz.ee.metrics.producers.MetricRegistryProducer;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.*;
 
 import java.lang.management.ClassLoadingMXBean;
@@ -66,14 +65,6 @@ public class MetricsExtension implements Extension {
     public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
 
         log.info("Initialising Metrics common module.");
-
-        try {
-            ConfigProvider.getConfig();
-        } catch (IllegalStateException | NoClassDefFoundError e) {
-            log.severe("KumuluzEE Config MP is required in order for KumuluzEE Metrics to work correctly. " +
-                    "Please include it in your dependencies.");
-            throw e;
-        }
 
         ConfigurationUtil configurationUtil = ConfigurationUtil.getInstance();
 
@@ -285,10 +276,11 @@ public class MetricsExtension implements Extension {
                 return new ForwardingCounter() {
                     @Override
                     public long getCount() {
-                        return ((Number) ((com.codahale.metrics.Gauge) metric).getValue()).longValue();
+                        return ((Number) ((com.codahale.metrics.Gauge<?>) metric).getValue()).longValue();
                     }
                 };
             } else {
+                //noinspection unchecked
                 return (Gauge<Number>) ((com.codahale.metrics.Gauge<Number>) metric)::getValue;
             }
         } else {
@@ -298,7 +290,7 @@ public class MetricsExtension implements Extension {
 
     private void registerNonDropwizardMetrics(MetricRegistry registry, Map<String, Metadata> metadataMap) {
         ClassLoadingMXBean classLoadingMXBean = ManagementFactory.getClassLoadingMXBean();
-        registry.register(metadataMap.get("classloader.currentLoadedClass.count"), (Gauge) classLoadingMXBean::getLoadedClassCount);
+        registry.register(metadataMap.get("classloader.currentLoadedClass.count"), (Gauge<?>) classLoadingMXBean::getLoadedClassCount);
         registry.register(metadataMap.get("classloader.totalLoadedClass.count"), new ForwardingCounter() {
             @Override
             public long getCount() {
@@ -313,9 +305,9 @@ public class MetricsExtension implements Extension {
         });
 
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-        registry.register(metadataMap.get("thread.count"), (Gauge) threadMXBean::getThreadCount);
-        registry.register(metadataMap.get("thread.daemon.count"), (Gauge) threadMXBean::getDaemonThreadCount);
-        registry.register(metadataMap.get("thread.max.count"), (Gauge) threadMXBean::getPeakThreadCount);
+        registry.register(metadataMap.get("thread.count"), (Gauge<?>) threadMXBean::getThreadCount);
+        registry.register(metadataMap.get("thread.daemon.count"), (Gauge<?>) threadMXBean::getDaemonThreadCount);
+        registry.register(metadataMap.get("thread.max.count"), (Gauge<?>) threadMXBean::getPeakThreadCount);
 
         OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
         registry.register(metadataMap.get("cpu.availableProcessors"),

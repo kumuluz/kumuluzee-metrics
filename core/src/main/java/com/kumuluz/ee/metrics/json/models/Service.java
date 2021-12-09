@@ -33,11 +33,11 @@ import java.time.Instant;
  */
 public class Service {
 
-    private Instant timestamp;
-    private String environment;
-    private String name;
-    private String version;
-    private String instance;
+    private final Instant timestamp;
+    private final String environment;
+    private final String name;
+    private final String version;
+    private final String instance;
 
     public Service() {
         this.timestamp = Instant.now();

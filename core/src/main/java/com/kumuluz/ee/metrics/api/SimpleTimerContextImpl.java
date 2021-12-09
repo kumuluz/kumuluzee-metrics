@@ -23,7 +23,7 @@ package com.kumuluz.ee.metrics.api;
 import com.codahale.metrics.Clock;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 /**
  * Microprofile SimpleTimer.Context implementation.
@@ -46,7 +46,7 @@ public class SimpleTimerContextImpl implements SimpleTimer.Context, AutoCloseabl
     @Override
     public long stop() {
         final long elapsed = clock.getTick() - startTime;
-        simpleTimer.update(elapsed, TimeUnit.NANOSECONDS);
+        simpleTimer.update(Duration.ofNanos(elapsed));
         return elapsed;
     }
 

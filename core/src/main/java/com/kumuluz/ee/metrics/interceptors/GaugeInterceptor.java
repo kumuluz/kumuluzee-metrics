@@ -63,7 +63,7 @@ public class GaugeInterceptor {
                 if (method.isAnnotationPresent(org.eclipse.microprofile.metrics.annotation.Gauge.class)) {
                     MetadataWithTags metadata = AnnotationMetadata.buildMetadata(type, method,
                             org.eclipse.microprofile.metrics.annotation.Gauge.class, MetricType.GAUGE);
-                    Gauge gauge = applicationRegistry.getGauges().get(metadata.getMetricID());
+                    Gauge<?> gauge = applicationRegistry.getGauges().get(metadata.getMetricID());
 
                     if (gauge == null) {
                         applicationRegistry.register(metadata.getMetadata(),

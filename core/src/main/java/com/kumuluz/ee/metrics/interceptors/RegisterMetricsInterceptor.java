@@ -37,8 +37,8 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Interceptor for registering Timed, Metered and Counted annotations on bean construct.
@@ -52,7 +52,7 @@ import java.util.Set;
 @Priority(Interceptor.Priority.LIBRARY_BEFORE - 10)
 public class RegisterMetricsInterceptor {
 
-    private static final Set<Member> processedElements = new HashSet<>();
+    private static final ConcurrentMap<Member, Member> PROCESSED_ELEMENTS = new ConcurrentHashMap<>();
 
     @Inject
     private MetricRegistry registry;
@@ -77,12 +77,7 @@ public class RegisterMetricsInterceptor {
 
     private <E extends Member & AnnotatedElement> void registerMetrics(Class<?> bean, E element) {
 
-        synchronized (processedElements) {
-
-            if (processedElements.contains(element)) {
-                return;
-            }
-
+        PROCESSED_ELEMENTS.computeIfAbsent(element, el -> {
             if (AnnotationMetadata.getAnnotation(bean, element, Counted.class) != null) {
                 MetadataWithTags m = AnnotationMetadata.buildMetadata(bean, element, Counted.class, MetricType.COUNTER);
                 registry.register(m.getMetadata(), new CounterImpl(), m.getTags());
@@ -104,7 +99,7 @@ public class RegisterMetricsInterceptor {
                 registry.register(m.getMetadata(), new ConcurrentGaugeImpl(), m.getTags());
             }
 
-            processedElements.add(element);
-        }
+            return el;
+        });
     }
 }

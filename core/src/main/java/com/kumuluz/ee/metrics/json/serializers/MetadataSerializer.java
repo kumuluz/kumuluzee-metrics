@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.kumuluz.ee.metrics.json.models.MetadataWithMergedTags;
+import com.kumuluz.ee.metrics.utils.GlobalTagsUtil;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Tag;
 
@@ -50,18 +51,23 @@ public class MetadataSerializer extends StdSerializer<MetadataWithMergedTags> {
         Metadata metadata = metadataWithTags.getMetadata();
 
         json.writeStartObject();
-        if (metadata.getUnit().isPresent()) {
-            json.writeStringField("unit", metadata.getUnit().get());
+        if (metadata.unit().isPresent()) {
+            json.writeStringField("unit", metadata.unit().get());
+        } else {
+            json.writeStringField("unit", "none");
         }
         json.writeStringField("type", metadata.getType());
-        if (metadata.getDescription().isPresent()) {
-            json.writeStringField("description", metadata.getDescription().get());
+        if (metadata.description().isPresent()) {
+            json.writeStringField("description", metadata.description().get());
         }
         json.writeStringField("displayName", metadata.getDisplayName());
         json.writeArrayFieldStart("tags");
         for (List<Tag> tags : metadataWithTags.getTags()) {
             json.writeStartArray();
             for (Tag t : tags) {
+                json.writeObject(t);
+            }
+            for (Tag t : GlobalTagsUtil.getGlobalTags()) {
                 json.writeObject(t);
             }
             json.writeEndArray();

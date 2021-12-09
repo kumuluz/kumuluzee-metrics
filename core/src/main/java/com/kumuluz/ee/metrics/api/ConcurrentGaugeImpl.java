@@ -20,9 +20,11 @@
  */
 package com.kumuluz.ee.metrics.api;
 
+import com.codahale.metrics.Clock;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAccumulator;
 
 /**
  * Implementation of {@link ConcurrentGauge}.
@@ -32,23 +34,23 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ConcurrentGaugeImpl implements ConcurrentGauge {
 
-    private AtomicLong count;
+    private final Clock clock;
+    private final AtomicLong count;
 
-    private long prevMinuteMin;
-    private long prevMinuteMax;
+    private long minMaxMinute;
+    private long minInPreviousMinute;
+    private long maxInPreviousMinute;
 
-    private AtomicLong curMin;
-    private AtomicLong curMax;
-
-    private AtomicLong timestamp;
+    private LongAccumulator curMin;
+    private LongAccumulator curMax;
 
     public ConcurrentGaugeImpl() {
+        this.clock = Clock.defaultClock();
         this.count = new AtomicLong(0);
-        this.prevMinuteMin = 0;
-        this.prevMinuteMax = 0;
-        this.curMin = new AtomicLong(0);
-        this.curMax = new AtomicLong(0);
-        this.timestamp = new AtomicLong(getTimestamp());
+        this.minInPreviousMinute = 0;
+        this.maxInPreviousMinute = 0;
+        initMinMax();
+        this.minMaxMinute = 0;
     }
 
     @Override
@@ -59,60 +61,46 @@ public class ConcurrentGaugeImpl implements ConcurrentGauge {
     @Override
     public long getMax() {
         checkTime();
-        return prevMinuteMax;
+        return maxInPreviousMinute;
     }
 
     @Override
     public long getMin() {
         checkTime();
-        return prevMinuteMin;
+        return minInPreviousMinute;
     }
 
     @Override
     public void inc() {
         checkTime();
-        incAndCheckLimits();
-    }
-
-    private synchronized void incAndCheckLimits() {
         long cur = count.incrementAndGet();
-        if (cur > curMax.get()) {
-            curMax.set(cur);
-        }
+        curMax.accumulate(cur);
     }
 
     @Override
     public void dec() {
         checkTime();
-        decAndCheckLimits();
-    }
-
-    private synchronized void decAndCheckLimits() {
         long cur = count.decrementAndGet();
-        if (cur < curMin.get()) {
-            curMin.set(cur);
-        }
+        curMin.accumulate(cur);
     }
 
-    private void checkTime() {
-        long curTime = getTimestamp();
-
-        if (curTime > timestamp.get()) {
-            updateTime(curTime);
-        }
+    private void initMinMax() {
+        long currentCount = this.count.get();
+        curMin = new LongAccumulator(Long::min, Long.MAX_VALUE);
+        curMin.accumulate(currentCount);
+        curMax = new LongAccumulator(Long::max, Long.MIN_VALUE);
+        curMax.accumulate(currentCount);
     }
 
-    private synchronized void updateTime(long curTime) {
-        if (curTime > timestamp.get()) {
-            timestamp.set(curTime);
-            prevMinuteMin = curMin.get();
-            prevMinuteMax = curMax.get();
-            curMin.set(count.get());
-            curMax.set(count.get());
-        }
-    }
+    private synchronized void checkTime() {
 
-    private long getTimestamp() {
-        return System.currentTimeMillis() / (60 * 1000);
+        long currentMinute = this.clock.getTime() / (1000 * 60);
+
+        if (currentMinute > minMaxMinute) {
+            minMaxMinute = currentMinute;
+            minInPreviousMinute = curMin.get();
+            maxInPreviousMinute = curMax.get();
+            initMinMax();
+        }
     }
 }

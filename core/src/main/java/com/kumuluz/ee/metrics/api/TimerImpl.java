@@ -20,11 +20,16 @@
  */
 package com.kumuluz.ee.metrics.api;
 
+import com.codahale.metrics.Clock;
+import com.codahale.metrics.ExponentiallyDecayingReservoir;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
 
+import java.time.Duration;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Microprofile Timer implementation.
@@ -35,19 +40,23 @@ import java.util.concurrent.TimeUnit;
  */
 public class TimerImpl implements Timer {
 
-    private com.codahale.metrics.Timer timer;
+    private final com.codahale.metrics.Timer timer;
+    private final SumKeepingReservoir reservoir;
 
     public TimerImpl() {
-        this.timer = new com.codahale.metrics.Timer();
+        Clock clock = Clock.defaultClock();
+        this.reservoir = new SumKeepingReservoir();
+        this.timer = new com.codahale.metrics.Timer(new Meter(clock), new Histogram(this.reservoir), clock);
     }
 
     public TimerImpl(com.codahale.metrics.Timer timer) {
+        this.reservoir = null;
         this.timer = timer;
     }
 
     @Override
-    public void update(long l, TimeUnit timeUnit) {
-        this.timer.update(l, timeUnit);
+    public void update(Duration duration) {
+        this.timer.update(duration);
     }
 
     @Override
@@ -63,6 +72,11 @@ public class TimerImpl implements Timer {
     @Override
     public Context time() {
         return new ContextImpl(this.timer.time());
+    }
+
+    @Override
+    public Duration getElapsedTime() {
+        return this.reservoir != null ? Duration.ofNanos(this.reservoir.sum.longValue()) : null;
     }
 
     @Override
@@ -93,5 +107,16 @@ public class TimerImpl implements Timer {
     @Override
     public Snapshot getSnapshot() {
         return new SnapshotImpl(this.timer.getSnapshot());
+    }
+
+    private static class SumKeepingReservoir extends ExponentiallyDecayingReservoir {
+
+        private final LongAdder sum = new LongAdder();
+
+        @Override
+        public void update(long value) {
+            super.update(value);
+            sum.add(value);
+        }
     }
 }

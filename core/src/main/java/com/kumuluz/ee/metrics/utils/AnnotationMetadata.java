@@ -27,6 +27,7 @@ import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 import org.eclipse.microprofile.metrics.annotation.*;
 
+import javax.enterprise.inject.Stereotype;
 import javax.enterprise.inject.spi.InjectionPoint;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -34,6 +35,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -49,21 +51,48 @@ public class AnnotationMetadata {
 
     private static final Logger LOG = Logger.getLogger(AnnotationMetadata.class.getName());
 
-    public static <E extends AnnotatedElement, T extends Annotation> T getAnnotation
-            (Class<?> bean, E element, Class<T> annotationClass) {
+    public static <E extends AnnotatedElement, T extends Annotation> T getAnnotation(Class<?> bean, E element,
+                                                                                     Class<T> annotationClass) {
 
         if (element.getAnnotation(annotationClass) != null) {
             return element.getAnnotation(annotationClass);
         } else {
+
+            Optional<T> stereotypeAnnotationElement = findStereotypeAnnotation(element, annotationClass);
+            if (stereotypeAnnotationElement.isPresent()) {
+                return stereotypeAnnotationElement.get();
+            }
+
             do {
                 if (bean.getAnnotation(annotationClass) != null) {
                     return bean.getAnnotation(annotationClass);
                 }
+
+                Optional<T> stereotypeAnnotationBean = findStereotypeAnnotation(bean, annotationClass);
+                if (stereotypeAnnotationBean.isPresent()) {
+                    return stereotypeAnnotationBean.get();
+                }
+
                 bean = bean.getSuperclass();
             } while (Object.class.equals(bean));
 
             return null;
         }
+    }
+
+    private static <T extends Annotation> Optional<T> findStereotypeAnnotation(AnnotatedElement element,
+                                                                               Class<T> annotationClass) {
+
+        for (Annotation annotation : element.getAnnotations()) {
+
+            if (annotation.annotationType().isAnnotationPresent(Stereotype.class) &&
+                    annotation.annotationType().isAnnotationPresent(annotationClass)) {
+
+                return Optional.of(annotation.annotationType().getAnnotation(annotationClass));
+            }
+        }
+
+        return Optional.empty();
     }
 
     public static <E extends Member & AnnotatedElement, T extends Annotation> MetadataWithTags buildMetadata
@@ -74,7 +103,9 @@ public class AnnotationMetadata {
     }
 
     private static <M extends Member, T extends Annotation> MetadataWithTags buildMetadata(Class<?> bean, M member,
-                                                                                           T annotation, boolean fromElement, MetricType metricType) {
+                                                                                           T annotation,
+                                                                                           boolean fromElement,
+                                                                                           MetricType metricType) {
 
         MetricType type;
         boolean absolute;
@@ -83,7 +114,6 @@ public class AnnotationMetadata {
         String displayName = "";
         String description = "";
         String unit = MetricUnits.NONE;
-        boolean reusable = false;
         if (annotation instanceof Counted) {
             Counted a = (Counted) annotation;
             type = MetricType.COUNTER;
@@ -93,7 +123,6 @@ public class AnnotationMetadata {
             displayName = a.displayName();
             description = a.description();
             unit = a.unit();
-            reusable = a.reusable();
         } else if (annotation instanceof Timed) {
             Timed a = (Timed) annotation;
             type = MetricType.TIMER;
@@ -103,7 +132,6 @@ public class AnnotationMetadata {
             displayName = a.displayName();
             description = a.description();
             unit = a.unit();
-            reusable = a.reusable();
         } else if (annotation instanceof SimplyTimed) {
             SimplyTimed a = (SimplyTimed) annotation;
             type = MetricType.SIMPLE_TIMER;
@@ -113,7 +141,6 @@ public class AnnotationMetadata {
             displayName = a.displayName();
             description = a.description();
             unit = a.unit();
-            reusable = a.reusable();
         } else if (annotation instanceof Metered) {
             Metered a = (Metered) annotation;
             type = MetricType.METERED;
@@ -123,7 +150,6 @@ public class AnnotationMetadata {
             displayName = a.displayName();
             description = a.description();
             unit = a.unit();
-            reusable = a.reusable();
         } else if (annotation instanceof ConcurrentGauge) {
             ConcurrentGauge a = (ConcurrentGauge) annotation;
             type = MetricType.CONCURRENT_GAUGE;
@@ -133,7 +159,6 @@ public class AnnotationMetadata {
             displayName = a.displayName();
             description = a.description();
             unit = a.unit();
-            reusable = a.reusable();
         } else if (annotation instanceof Gauge) {
             Gauge a = (Gauge) annotation;
             type = MetricType.GAUGE;
@@ -195,7 +220,6 @@ public class AnnotationMetadata {
         metadataBuilder.withDisplayName(displayName);
         metadataBuilder.withDescription(description);
         metadataBuilder.withUnit(unit);
-        metadataBuilder.reusable(reusable);
 
         return new MetadataWithTags(metadataBuilder.build(), parsedTags);
     }

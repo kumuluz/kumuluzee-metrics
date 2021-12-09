@@ -33,7 +33,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 
 /**
  * Resource that contains all possible metrics.
@@ -77,7 +78,7 @@ public class MetricsResource {
         testConcurrentGauge.inc();
         testCounter.inc();
         testHistogram.update(123);
-        testTimer.update(100, TimeUnit.SECONDS);
+        testTimer.update(Duration.of(100, ChronoUnit.SECONDS));
 
         return Response.ok(testGauge()).build();
     }

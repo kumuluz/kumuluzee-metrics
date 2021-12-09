@@ -33,7 +33,7 @@ import java.io.OutputStream;
  */
 public class SnapshotImpl extends Snapshot {
 
-    private com.codahale.metrics.Snapshot snapshot;
+    private final com.codahale.metrics.Snapshot snapshot;
 
     public SnapshotImpl(com.codahale.metrics.Snapshot snapshot) {
         this.snapshot = snapshot;

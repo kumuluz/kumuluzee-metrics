@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public class MetricsCollection {
 
-    private Map<MetricID, Metric> metrics;
+    private final Map<MetricID, Metric> metrics;
 
     public MetricsCollection() {
         metrics = new HashMap<>();

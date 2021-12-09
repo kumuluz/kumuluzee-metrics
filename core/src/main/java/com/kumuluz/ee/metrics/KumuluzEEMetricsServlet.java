@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.kumuluz.ee.metrics.json.MetricsModule;
 import com.kumuluz.ee.metrics.json.models.MetricsCollection;
 import com.kumuluz.ee.metrics.prometheus.PrometheusMetricWriter;
+import com.kumuluz.ee.metrics.utils.GlobalTagsUtil;
 import com.kumuluz.ee.metrics.utils.RequestInfo;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -53,8 +54,8 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
 
     private static final String APPLICATION_JSON = "application/json";
 
-    private static ObjectMapper metricMapper = new ObjectMapper().registerModule(new MetricsModule(false));
-    private static ObjectMapper metadataMapper = new ObjectMapper().registerModule(new MetricsModule(true));
+    private static final ObjectMapper METRIC_MAPPER = new ObjectMapper().registerModule(new MetricsModule(false));
+    private static final ObjectMapper METADATA_MAPPER = new ObjectMapper().registerModule(new MetricsModule(true));
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -91,7 +92,8 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
 
             if (requestInfo.getRequestType() == RequestInfo.RequestType.PROMETHEUS) {
                 PrintWriter writer = response.getWriter();
-                PrometheusMetricWriter prometheusMetricWriter = new PrometheusMetricWriter(writer);
+                PrometheusMetricWriter prometheusMetricWriter = new PrometheusMetricWriter(writer,
+                        GlobalTagsUtil.getPrometheusGlobalTags());
 
                 try {
                     switch (requestInfo.getMetricsRequested()) {
@@ -159,8 +161,7 @@ public class KumuluzEEMetricsServlet extends HttpServlet {
 
     private ObjectWriter getWriter(HttpServletRequest request, RequestInfo.RequestType requestType) {
         boolean prettyPrintOff = "false".equals(request.getParameter("pretty"));
-        ObjectMapper mapper = (requestType == RequestInfo.RequestType.JSON_METADATA) ? this.metadataMapper :
-                this.metricMapper;
+        ObjectMapper mapper = (requestType == RequestInfo.RequestType.JSON_METADATA) ? METADATA_MAPPER : METRIC_MAPPER;
 
         return prettyPrintOff ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter();
     }

@@ -48,6 +48,7 @@ import java.lang.reflect.Member;
 @SimplyTimed
 @Priority(Interceptor.Priority.LIBRARY_BEFORE)
 public class SimplyTimedInterceptor {
+
     @Inject
     private MetricRegistry applicationRegistry;
 

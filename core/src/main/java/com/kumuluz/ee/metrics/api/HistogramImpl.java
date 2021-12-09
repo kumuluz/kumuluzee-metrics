@@ -24,6 +24,8 @@ import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Snapshot;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * Microprofile Histogram implementation.
  *
@@ -33,29 +35,39 @@ import org.eclipse.microprofile.metrics.Snapshot;
  */
 public class HistogramImpl implements Histogram {
 
-    private com.codahale.metrics.Histogram histogram;
+    private final com.codahale.metrics.Histogram histogram;
+    private final AtomicLong sum;
 
     public HistogramImpl() {
         this.histogram = new com.codahale.metrics.Histogram(new ExponentiallyDecayingReservoir());
+        this.sum = new AtomicLong(0);
     }
 
     public HistogramImpl(com.codahale.metrics.Histogram histogram) {
         this.histogram = histogram;
+        this.sum = new AtomicLong(0);
     }
 
     @Override
     public void update(int i) {
         this.histogram.update(i);
+        this.sum.addAndGet(i);
     }
 
     @Override
     public void update(long l) {
         this.histogram.update(l);
+        this.sum.addAndGet(l);
     }
 
     @Override
     public long getCount() {
         return this.histogram.getCount();
+    }
+
+    @Override
+    public long getSum() {
+        return this.sum.get();
     }
 
     @Override

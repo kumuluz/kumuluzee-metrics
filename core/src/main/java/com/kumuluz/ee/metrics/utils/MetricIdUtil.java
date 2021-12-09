@@ -34,7 +34,7 @@ import java.util.Map;
  */
 public class MetricIdUtil {
 
-    private static ServiceConfigInfo configInfo = ServiceConfigInfo.getInstance();
+    private static final ServiceConfigInfo configInfo = ServiceConfigInfo.getInstance();
 
     public static String metricIdToString(MetricID metricID) {
         return metricID.getName() + tagsToSuffix(metricID);
@@ -47,6 +47,7 @@ public class MetricIdUtil {
         for (Map.Entry<String, String> tag : metricID.getTags().entrySet()) {
             sb.append(";").append(tag.getKey()).append("=").append(tag.getValue().replaceAll(";", "_"));
         }
+        sb.append(GlobalTagsUtil.getJsonGlobalTags());
 
         return sb.toString();
     }

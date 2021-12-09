@@ -224,9 +224,6 @@ Alongside metric's name, the following metadata is stored for each metric:
 - `description` - A human readable description. Default: `""`.
 - `unit` - Unit of the metric. Default: `MetricUnits.NONE`.
 - `tags` - Tags of the metric.
-- `reusable` - Is the metric reusable. If `false`, the metric can not be registered more than once with the same name
-  and scope. This is done to prevent hard to spot copy & paste errors. If this behaviour is required, all such metrics
-  should have the `reusable` flag set to true. Default: `false`.
 
 Metadata is specified using annotation parameters in `@Metric`, `@Gauge`, `@Counted`, `@Metered` and `@Timed`
 annotations.

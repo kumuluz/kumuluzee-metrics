@@ -32,8 +32,8 @@ import org.eclipse.microprofile.metrics.Tag;
  */
 public class MetadataWithTags {
 
-    private Metadata metadata;
-    private Tag[] tags;
+    private final Metadata metadata;
+    private final Tag[] tags;
 
     public MetadataWithTags(Metadata metadata, Tag[] tags) {
         this.metadata = metadata;
