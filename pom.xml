@@ -61,16 +61,10 @@
 
     <developers>
         <developer>
-            <name>Aljaž Blažej</name>
-            <id>aljazb</id>
-            <email>aljaz.blazej@gmail.com</email>
-            <url>https://github.com/aljazb</url>
-        </developer>
-        <developer>
-            <name>Tilen Faganel</name>
-            <id>tfaga</id>
-            <email>tilen.faganel@me.com</email>
-            <url>https://github.com/TFaga</url>
+            <name>KumuluzEE Development Team</name>
+            <id>kumuluz</id>
+            <email>info@kumuluz.com</email>
+            <url>https://github.com/kumuluz</url>
         </developer>
     </developers>
 
