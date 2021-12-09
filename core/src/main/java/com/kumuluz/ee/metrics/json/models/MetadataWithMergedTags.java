@@ -34,8 +34,8 @@ import java.util.List;
  */
 public class MetadataWithMergedTags {
 
-    private Metadata metadata;
-    private List<List<Tag>> tags;
+    private final Metadata metadata;
+    private final List<List<Tag>> tags;
 
     public MetadataWithMergedTags(Metadata metadata) {
         this.metadata = metadata;

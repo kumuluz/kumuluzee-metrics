@@ -50,7 +50,7 @@ public class MetricRegistryProducer {
     @RegistryType(type = MetricRegistry.Type.APPLICATION)
     public static MetricRegistry getApplicationRegistry() {
         if (applicationRegistry == null) {
-            applicationRegistry = new MetricRegistryImpl();
+            applicationRegistry = new MetricRegistryImpl(MetricRegistry.Type.APPLICATION);
         }
 
         return applicationRegistry;
@@ -60,7 +60,7 @@ public class MetricRegistryProducer {
     @RegistryType(type = MetricRegistry.Type.BASE)
     public static MetricRegistry getBaseRegistry() {
         if (baseRegistry == null) {
-            baseRegistry = new MetricRegistryImpl();
+            baseRegistry = new MetricRegistryImpl(MetricRegistry.Type.BASE);
         }
 
         return baseRegistry;
@@ -70,7 +70,7 @@ public class MetricRegistryProducer {
     @RegistryType(type = MetricRegistry.Type.VENDOR)
     public static MetricRegistry getVendorRegistry() {
         if (vendorRegistry == null) {
-            vendorRegistry = new MetricRegistryImpl();
+            vendorRegistry = new MetricRegistryImpl(MetricRegistry.Type.VENDOR);
         }
 
         return vendorRegistry;

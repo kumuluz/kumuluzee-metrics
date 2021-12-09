@@ -28,8 +28,10 @@ import com.kumuluz.ee.metrics.utils.MetricIdUtil;
 import org.eclipse.microprofile.metrics.*;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Serializer for MetricRegistry, which exposes metrics.
@@ -85,7 +87,7 @@ public class MetricsCollectionSerializer extends StdSerializer<MetricsCollection
         String compositeSuffix = MetricIdUtil.tagsToSuffix(metricID);
 
         if (metric instanceof Gauge) {
-            json.writeObject(((Gauge) metric).getValue());
+            json.writeObject(((Gauge<?>) metric).getValue());
         } else if (metric instanceof Counter) {
             json.writeObject(((Counter) metric).getCount());
         } else if (metric instanceof Meter) {
@@ -95,17 +97,21 @@ public class MetricsCollectionSerializer extends StdSerializer<MetricsCollection
             Histogram histogram = (Histogram) metric;
             Snapshot snapshot = histogram.getSnapshot();
             json.writeObjectField("count" + compositeSuffix, histogram.getCount());
+            json.writeObjectField("sum" + compositeSuffix, histogram.getSum());
             serializeSnapshot(snapshot, compositeSuffix, json);
         } else if (metric instanceof Timer) {
             Timer timer = (Timer) metric;
             Snapshot snapshot = timer.getSnapshot();
             serializeMetered(timer, compositeSuffix, json);
             serializeSnapshot(snapshot, compositeSuffix, json);
+            json.writeObjectField("elapsedTime" + compositeSuffix, timer.getElapsedTime().toNanos());
         } else if (metric instanceof SimpleTimer) {
             SimpleTimer simpleTimer = (SimpleTimer) metric;
 
             json.writeObjectField("count" + compositeSuffix, simpleTimer.getCount());
-            json.writeObjectField("elapsedTime" + compositeSuffix, simpleTimer.getElapsedTime());
+            json.writeObjectField("elapsedTime" + compositeSuffix, simpleTimer.getElapsedTime().toNanos());
+            json.writeObjectField("maxTimeDuration" + compositeSuffix, Optional.ofNullable(simpleTimer.getMaxTimeDuration()).map(Duration::toNanos).orElse(null));
+            json.writeObjectField("minTimeDuration" + compositeSuffix, Optional.ofNullable(simpleTimer.getMinTimeDuration()).map(Duration::toNanos).orElse(null));
         } else if (metric instanceof ConcurrentGauge) {
             ConcurrentGauge concurrentGauge = (ConcurrentGauge) metric;
 

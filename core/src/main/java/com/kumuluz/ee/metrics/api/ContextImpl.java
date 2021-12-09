@@ -31,7 +31,7 @@ import org.eclipse.microprofile.metrics.Timer;
  */
 public class ContextImpl implements Timer.Context {
 
-    private com.codahale.metrics.Timer.Context context;
+    private final com.codahale.metrics.Timer.Context context;
 
     public ContextImpl(com.codahale.metrics.Timer.Context context) {
         this.context = context;

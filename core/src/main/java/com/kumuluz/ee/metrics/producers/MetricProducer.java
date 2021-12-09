@@ -88,6 +88,6 @@ public class MetricProducer {
     public <T extends Number> Gauge<T> produceGauge(InjectionPoint injectionPoint) {
         MetadataWithTags metadataWithTags = AnnotationMetadata.buildProducerMetadata(injectionPoint, MetricType.GAUGE);
 
-        return () -> (T) applicationRegistry.getGauges().get(metadataWithTags.getMetricID()).getValue();
+        return () -> (T) applicationRegistry.getGauge(metadataWithTags.getMetricID()).getValue();
     }
 }

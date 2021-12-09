@@ -21,7 +21,7 @@
             <groupId>com.kumuluz.ee.config</groupId>
             <artifactId>kumuluzee-config-mp</artifactId>
             <version>${kumuluzee-config-mp.version}</version>
-            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
 
         <dependency>

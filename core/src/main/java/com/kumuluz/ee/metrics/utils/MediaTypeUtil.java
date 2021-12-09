@@ -32,9 +32,9 @@ import java.util.List;
  */
 public class MediaTypeUtil {
 
-    private static String APP_JSON = "application/json";
-    private static String TEXT_PLAIN = "text/plain";
-    private static List<String> KNOWN_HEADERS = new LinkedList<>();
+    private static final String APP_JSON = "application/json";
+    private static final String TEXT_PLAIN = "text/plain";
+    private static final List<String> KNOWN_HEADERS = new LinkedList<>();
 
     static {
         KNOWN_HEADERS.add(APP_JSON);
@@ -92,9 +92,9 @@ public class MediaTypeUtil {
             }
         }
 
-        if (primaryMediaTypes.stream().map(mt -> mt.mediaType).anyMatch(mt -> TEXT_PLAIN.equals(mt))) {
+        if (primaryMediaTypes.stream().map(mt -> mt.mediaType).anyMatch(TEXT_PLAIN::equals)) {
             return ReturnType.PROMETHEUS;
-        } else if (primaryMediaTypes.stream().map(mt -> mt.mediaType).anyMatch(mt -> APP_JSON.equals(mt))) {
+        } else if (primaryMediaTypes.stream().map(mt -> mt.mediaType).anyMatch(APP_JSON::equals)) {
             return ReturnType.JSON;
         } else {
             return ReturnType.PROMETHEUS;
@@ -102,8 +102,8 @@ public class MediaTypeUtil {
     }
 
     private static final class MediaTypeTuple {
-        private String mediaType;
-        private double priority;
+        private final String mediaType;
+        private final double priority;
 
         MediaTypeTuple(String mediaType, double priority) {
             this.mediaType = mediaType;

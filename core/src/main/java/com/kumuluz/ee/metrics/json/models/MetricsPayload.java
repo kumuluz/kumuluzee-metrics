@@ -31,8 +31,8 @@ import java.util.Map;
  */
 public class MetricsPayload {
 
-    private Service service;
-    private Map<String, MetricsCollection> registries;
+    private final Service service;
+    private final Map<String, MetricsCollection> registries;
 
     public MetricsPayload(Map<String, MetricsCollection> registries) {
         this.service = new Service();

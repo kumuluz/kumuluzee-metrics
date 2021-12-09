@@ -31,7 +31,7 @@ import org.eclipse.microprofile.metrics.Meter;
  */
 public class MeterImpl implements Meter {
 
-    private com.codahale.metrics.Meter meter;
+    private final com.codahale.metrics.Meter meter;
 
     public MeterImpl() {
         this.meter = new com.codahale.metrics.Meter();

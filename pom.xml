@@ -24,28 +24,28 @@
     <url>https://ee.kumuluz.com</url>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jaxb-api.version>2.3.1</jaxb-api.version>
 
-        <kumuluzee.version>3.8.0</kumuluzee.version>
-        <kumuluzee-config-mp.version>1.3.0</kumuluzee-config-mp.version>
+        <kumuluzee.version>3.13.0-SNAPSHOT</kumuluzee.version>
+        <kumuluzee-config-mp.version>1.4.1</kumuluzee-config-mp.version>
 
-        <microprofile-metrics.version>2.3</microprofile-metrics.version>
-        <dropwizard-metrics.version>4.1.0</dropwizard-metrics.version>
-        <jackson.version>2.9.9</jackson.version>
+        <microprofile-metrics.version>3.0</microprofile-metrics.version>
+        <dropwizard-metrics.version>4.2.4</dropwizard-metrics.version>
+        <jackson.version>2.12.0</jackson.version>
 
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
-        <arquillian.version>1.5.0.Final</arquillian.version>
-        <kumuluzee-arquillian-container.version>1.1.0</kumuluzee-arquillian-container.version>
+        <arquillian.version>1.6.0.Final</arquillian.version>
+        <kumuluzee-arquillian-container.version>1.1.1</kumuluzee-arquillian-container.version>
 
-        <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <nexus.staging.plugin.version>1.6.8</nexus.staging.plugin.version>
         <gpg.plugin.version>1.6</gpg.plugin.version>
-        <surefire.plugin.version>2.22.1</surefire.plugin.version>
+        <surefire.plugin.version>2.22.2</surefire.plugin.version>
     </properties>
 
     <scm>
@@ -61,16 +61,10 @@
 
     <developers>
         <developer>
-            <name>Aljaž Blažej</name>
-            <id>aljazb</id>
-            <email>aljaz.blazej@gmail.com</email>
-            <url>https://github.com/aljazb</url>
-        </developer>
-        <developer>
-            <name>Tilen Faganel</name>
-            <id>tfaga</id>
-            <email>tilen.faganel@me.com</email>
-            <url>https://github.com/TFaga</url>
+            <name>KumuluzEE Development Team</name>
+            <id>kumuluz</id>
+            <email>info@kumuluz.com</email>
+            <url>https://github.com/kumuluz</url>
         </developer>
     </developers>
 
@@ -87,6 +81,20 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
+
+    <repositories>
+        <repository>
+            <id>sonatype-snapshots</id>
+            <name>OSS Sonatype repo (snapshots)</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <dependencyManagement>
         <dependencies>
@@ -144,6 +152,12 @@
                                 <goals>
                                     <goal>sign</goal>
                                 </goals>
+                                <configuration>
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

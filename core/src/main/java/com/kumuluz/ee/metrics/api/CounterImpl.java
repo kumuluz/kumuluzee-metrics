@@ -31,7 +31,7 @@ import org.eclipse.microprofile.metrics.Counter;
  */
 public class CounterImpl implements Counter {
 
-    private com.codahale.metrics.Counter counter;
+    private final com.codahale.metrics.Counter counter;
 
     public CounterImpl() {
         this.counter = new com.codahale.metrics.Counter();

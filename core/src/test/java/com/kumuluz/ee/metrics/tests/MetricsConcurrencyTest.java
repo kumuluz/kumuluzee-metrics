@@ -51,7 +51,6 @@ public class MetricsConcurrencyTest {
     private static final Metadata METRIC = Metadata.builder()
             .withName("myMetric")
             .withType(MetricType.COUNTER)
-            .notReusable()
             .build();
 
     @Inject

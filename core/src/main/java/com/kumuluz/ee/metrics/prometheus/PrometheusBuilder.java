@@ -22,6 +22,7 @@ package com.kumuluz.ee.metrics.prometheus;
 
 import org.eclipse.microprofile.metrics.*;
 
+import java.time.Duration;
 import java.util.logging.Logger;
 
 /**
@@ -44,7 +45,7 @@ public class PrometheusBuilder {
         Object gaugeValue;
         gaugeValue = gauge.getValue();
 
-        if (!Number.class.isInstance(gaugeValue)) {
+        if (!(gaugeValue instanceof Number)) {
             log.info("Skipping Prometheus output for Gauge: " + name + " of type " + gauge.getValue().getClass());
             return;
         }
@@ -82,6 +83,27 @@ public class PrometheusBuilder {
         String lineName = name + "_elapsedTime";
         double value = simpleTimer.getElapsedTime().toNanos() * conversionFactor;
 
+        getPromTypeLine(builder, lineName, "gauge", "_seconds");
+        getPromValueLine(builder, lineName, value, tags, "_seconds");
+
+        Duration minMaxDuration = simpleTimer.getMaxTimeDuration();
+        lineName = name + "_maxTimeDuration";
+        if (minMaxDuration != null) {
+            value = minMaxDuration.toNanos() * conversionFactor;
+        } else {
+            value = Double.NaN;
+        }
+        getPromTypeLine(builder, lineName, "gauge");
+        getPromValueLine(builder, lineName, value, tags, "_seconds");
+
+        minMaxDuration = simpleTimer.getMinTimeDuration();
+
+        lineName = name + "_minTimeDuration";
+        if (minMaxDuration != null) {
+            value = minMaxDuration.toNanos() * conversionFactor;
+        } else {
+            value = Double.NaN;
+        }
         getPromTypeLine(builder, lineName, "gauge");
         getPromValueLine(builder, lineName, value, tags, "_seconds");
     }
@@ -154,10 +176,21 @@ public class PrometheusBuilder {
 
         getPromTypeLine(builder, name, "summary", appendUnit);
         getPromHelpLine(builder, name, description, appendUnit);
-        if (Counting.class.isInstance(sampling)) {
+        if (sampling instanceof Counting) {
             getPromValueLine(builder, name, ((Counting) sampling).getCount(), tags,
                     appendUnit == null ? "_count" : appendUnit + "_count");
         }
+
+        Double sumValue = null;
+        if (sampling instanceof Histogram) {
+            sumValue = (double) ((Histogram) sampling).getSum();
+        } else if (sampling instanceof Timer) {
+            sumValue = ((Timer) sampling).getElapsedTime().toNanos() * conversionFactor;
+        }
+        if (sumValue != null) {
+            getPromValueLine(builder, name, sumValue, tags, appendUnit == null ? "_sum" : appendUnit + "_sum");
+        }
+
         getPromValueLine(builder, name, medianVal, tags, new Tag(QUANTILE, "0.5"), appendUnit);
         getPromValueLine(builder, name, percentile75th, tags, new Tag(QUANTILE, "0.75"), appendUnit);
         getPromValueLine(builder, name, percentile95th, tags, new Tag(QUANTILE, "0.95"), appendUnit);

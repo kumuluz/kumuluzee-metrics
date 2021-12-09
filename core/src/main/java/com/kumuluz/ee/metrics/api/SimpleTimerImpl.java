@@ -25,33 +25,50 @@ import org.eclipse.microprofile.metrics.SimpleTimer;
 
 import java.time.Duration;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAccumulator;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Microprofile SimpleTimer implementation.
  *
  * @author Aljaž Pavišič
+ * @author Urban Malc
  * @since 2.3.0
  */
 public class SimpleTimerImpl implements SimpleTimer {
 
-    private Clock clock;
+    private final Clock clock;
 
-    private Duration elapsedTime;
+    private final LongAdder elapsedTimeNanos;
+    private final LongAdder count;
 
-    private LongAdder count;
+    private long minMaxMinute;
+    private Long minInPreviousMinute;
+    private Long maxInPreviousMinute;
+    private LongAccumulator minInMinute;
+    private LongAccumulator maxInMinute;
 
     public SimpleTimerImpl() {
         this.clock = Clock.defaultClock();
-        this.elapsedTime = Duration.ZERO;
+        this.elapsedTimeNanos = new LongAdder();
         this.count = new LongAdder();
+
+        minMaxMinute = 0;
+        initMinMax();
+        minInPreviousMinute = null;
+        maxInPreviousMinute = null;
     }
 
     @Override
     public void update(Duration duration) {
-        inc(1);
-        this.elapsedTime = this.elapsedTime.plus(duration);
+        long nanos = duration.toNanos();
+
+        this.count.increment();
+        this.elapsedTimeNanos.add(nanos);
+
+        checkTime();
+        minInMinute.accumulate(nanos);
+        maxInMinute.accumulate(nanos);
     }
 
     @Override
@@ -59,9 +76,8 @@ public class SimpleTimerImpl implements SimpleTimer {
         final long startTime = clock.getTick();
         try {
             return callable.call();
-        }
-        finally {
-            update(clock.getTick() - startTime);
+        } finally {
+            update(Duration.ofNanos(clock.getTick() - startTime));
         }
     }
 
@@ -71,7 +87,7 @@ public class SimpleTimerImpl implements SimpleTimer {
         try {
             runnable.run();
         } finally {
-            update(clock.getTick() - startTime);
+            update(Duration.ofNanos(clock.getTick() - startTime));
         }
     }
 
@@ -82,30 +98,43 @@ public class SimpleTimerImpl implements SimpleTimer {
 
     @Override
     public Duration getElapsedTime() {
-        return this.elapsedTime;
+        return Duration.ofNanos(this.elapsedTimeNanos.longValue());
     }
 
     @Override
     public long getCount() {
-        return this.count.sum();
+        return this.count.longValue();
     }
 
-    public void update(long duration, TimeUnit timeUnit){
-        update(timeUnit.toNanos(duration));
+    @Override
+    public Duration getMaxTimeDuration() {
+        checkTime();
+        return this.maxInPreviousMinute == null ? null : Duration.ofNanos(this.maxInPreviousMinute);
     }
 
-    public void inc(long n){
-        this.count.add(n);
+    @Override
+    public Duration getMinTimeDuration() {
+        checkTime();
+        return this.minInPreviousMinute == null ? null : Duration.ofNanos(this.minInPreviousMinute);
     }
 
-    public void dec(long n){
-        this.count.add(-n);
+    private void initMinMax() {
+        minInMinute = new LongAccumulator(Long::min, Long.MAX_VALUE);
+        maxInMinute = new LongAccumulator(Long::max, Long.MIN_VALUE);
     }
 
-    private void update(long duration) {
-        if (duration > 0) {
-            inc(1);
-            this.elapsedTime = this.elapsedTime.plusNanos(duration);
+    private synchronized void checkTime() {
+
+        long currentMinute = this.clock.getTime() / (1000 * 60);
+
+        if (minMaxMinute < currentMinute) {
+            long result = this.minInMinute.get();
+            this.minInPreviousMinute = (result == Long.MAX_VALUE) ? null : result;
+            result = this.maxInMinute.get();
+            this.maxInPreviousMinute = (result == Long.MIN_VALUE) ? null : result;
+
+            initMinMax();
+            minMaxMinute = currentMinute;
         }
     }
 }

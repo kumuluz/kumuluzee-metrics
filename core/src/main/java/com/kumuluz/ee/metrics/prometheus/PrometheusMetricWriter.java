@@ -44,9 +44,11 @@ public class PrometheusMetricWriter {
     private static final Logger log = Logger.getLogger(PrometheusMetricWriter.class.getName());
 
     private final Writer writer;
+    private final String additionalTags;
 
-    public PrometheusMetricWriter(Writer writer) {
+    public PrometheusMetricWriter(Writer writer, String additionalTags) {
         this.writer = writer;
+        this.additionalTags = additionalTags;
     }
 
     public void write(Map<String, MetricRegistry> metricRegistries) throws IOException {
@@ -89,16 +91,21 @@ public class PrometheusMetricWriter {
 
             String description;
 
-            if (!metricMetaData.getDescription().isPresent() || metricMetaData.getDescription().get().trim().isEmpty()) {
+            if (metricMetaData.description().isEmpty() || metricMetaData.description().get().trim().isEmpty()) {
                 description = "";
             } else {
-                description = metricMetaData.getDescription().get().trim();
+                description = metricMetaData.description().get().trim();
             }
 
             String tags = entryName.getTagsAsString();
+            if (tags == null || tags.isEmpty()) {
+                tags = additionalTags;
+            } else if (!additionalTags.isEmpty()) {
+                tags += "," + additionalTags;
+            }
 
             //appending unit to the metric name
-            String unit = metricMetaData.getUnit().orElse(null);
+            String unit = metricMetaData.getUnit();
 
             //Unit determination / translation
             double conversionFactor;
