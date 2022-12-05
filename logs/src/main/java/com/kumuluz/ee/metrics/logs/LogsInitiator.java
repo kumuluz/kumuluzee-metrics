@@ -43,7 +43,7 @@ public class LogsInitiator {
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    private ScheduledFuture handle;
+    private ScheduledFuture<?> handle;
 
     private void initialiseBean(@Observes @Initialized(ApplicationScoped.class) Object init) {
         ConfigurationUtil configurationUtil = ConfigurationUtil.getInstance();

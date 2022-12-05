@@ -47,15 +47,15 @@ public class LogstashSender implements Runnable {
 
     private static final Logger log = Logger.getLogger(LogstashSender.class.getName());
 
-    private String address;
-    private int port;
-    private ObjectMapper mapper;
+    private final String address;
+    private final int port;
+    private final ObjectMapper mapper;
 
     private Socket socket;
     private BufferedOutputStream outputStream = null;
 
-    private int startRetryDelay;
-    private int maxRetryDelay;
+    private final int startRetryDelay;
+    private final int maxRetryDelay;
     private int currentRetryDelay;
 
     public LogstashSender(String address, int port, int startRetryDelay, int maxRetryDelay) {

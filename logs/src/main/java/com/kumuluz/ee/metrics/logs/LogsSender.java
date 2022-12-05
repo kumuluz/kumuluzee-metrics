@@ -41,9 +41,9 @@ import java.util.logging.Logger;
 public class LogsSender implements Runnable {
 
     private static final Logger log = Logger.getLogger(LogsSender.class.getName());
-    private Level level;
+    private final Level level;
 
-    private ObjectMapper mapper;
+    private final ObjectMapper mapper;
 
     public LogsSender(String level) {
         this.mapper = (new ObjectMapper()).registerModule(new MetricsModule(false));

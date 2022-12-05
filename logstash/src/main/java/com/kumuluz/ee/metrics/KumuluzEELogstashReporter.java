@@ -38,14 +38,14 @@ public class KumuluzEELogstashReporter {
     private static final Logger log = Logger.getLogger(KumuluzEELogstashReporter.class.getName());
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    private ScheduledFuture handle;
+    private ScheduledFuture<?> handle;
 
-    private String address;
-    private int port;
-    private long periodSeconds;
+    private final String address;
+    private final int port;
+    private final long periodSeconds;
 
-    private int startRetryDelay;
-    private int maxRetryDelay;
+    private final int startRetryDelay;
+    private final int maxRetryDelay;
 
     public KumuluzEELogstashReporter(String address, int port, long periodSeconds, int startRetryDelay,
                                      int maxRetryDelay) {
