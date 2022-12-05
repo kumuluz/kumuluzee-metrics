@@ -30,7 +30,7 @@
 
         <jaxb-api.version>2.3.1</jaxb-api.version>
 
-        <kumuluzee.version>3.13.0-SNAPSHOT</kumuluzee.version>
+        <kumuluzee.version>4.1.0</kumuluzee.version>
         <kumuluzee-config-mp.version>1.4.1</kumuluzee-config-mp.version>
 
         <microprofile-metrics.version>3.0</microprofile-metrics.version>

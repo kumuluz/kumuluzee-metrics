@@ -25,7 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Utility class for media type (Accept header) parsing.
+ * Utility class for media type ('Accept' header) parsing.
  *
  * @author Urban Malc
  * @since 2.0.0
@@ -48,10 +48,15 @@ public class MediaTypeUtil {
         UNKNOWN
     }
 
-    public static ReturnType parseMediaType(String headers) {
+    public static ReturnType parseMediaType(String acceptHeader) {
+
+        if (acceptHeader == null) {
+            return ReturnType.PROMETHEUS;
+        }
+
         List<MediaTypeTuple> parsedHeaders = new ArrayList<>();
 
-        for (String header : headers.split(",")) {
+        for (String header : acceptHeader.split(",")) {
             String[] headerElements = header.split(";");
 
             if (!KNOWN_HEADERS.contains(headerElements[0])) {
@@ -69,7 +74,7 @@ public class MediaTypeUtil {
         }
 
         if (parsedHeaders.size() == 0) {
-            if (headers.length() > 0) {
+            if (acceptHeader.length() > 0) {
                 // no known headers
                 return ReturnType.UNKNOWN;
             } else {
