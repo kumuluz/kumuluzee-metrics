@@ -14,7 +14,7 @@ KumuluzEE Metrics includes automatic collection of JVM metrics. It supports easy
 of application specific metrics, as described below. 
 
 The implementation is based on Dropwizard metrics. More information about their implementation can be found on
-[github](https://github.com/dropwizard/metrics) or their [official page](http://metrics.dropwizard.io).
+[GitHub](https://github.com/dropwizard/metrics) or their [official page](http://metrics.dropwizard.io).
 
 KumuluzEE Metrics is fully compliant with [MicroProfile Metrics 2.2.1](https://microprofile.io/project/eclipse/microprofile-metrics).
 
@@ -43,7 +43,7 @@ in order to work. You can add it to your project like so:
 
 ## Metric Types
 
-There are several different measuring tools available: 
+There are several measuring tools available: 
 
 - Gauge: measures a simple value
 - Counter: measures an integer, which can only increase
@@ -240,7 +240,7 @@ Example of specifying tags in an environment variable:
 $ export MP_METRICS_TAGS=app=shop,tier=integration
 ```
 
-By default the following tags are added to every metric:
+By default, the following tags are added to every metric:
 - `environment` - Environment in which the service is running. Read from the configuration key `kumuluzee.env.name`.
   Default value `dev`.
 - `serviceName` - Name of the service. Read from the configuration key `kumuluzee.name`. Default value `UNKNOWN`.
@@ -502,10 +502,10 @@ Example of the Logs reporter configuration:
 
 ```yaml
 kumuluzee:
-    metrics:
-        logs:
-            period-s: 60
-            level: INFO
+  metrics:
+    logs:
+      period-s: 60
+      level: INFO
 ```
 
 The metrics are logged in the same JSON format as exposed by the servlet GET method alongside with service information.
@@ -533,11 +533,11 @@ Example of the Logstash reporter configuration:
 
 ```yaml
 kumuluzee:
-    metrics:
-        logstash:
-              address: 192.168.0.1
-              port: 5043
-              period-s: 15
+  metrics:
+    logstash:
+      address: 192.168.0.1
+      port: 5043
+      period-s: 15
 ```
 
 Logstash `tcp` input needs to be defined with `json_lines` codec. Example Logstash configuration:
@@ -553,7 +553,7 @@ input {
 
 ## Changelog
 
-Recent changes can be viewed on Github on the [Releases Page](https://github.com/kumuluz/kumuluzee-metrics/releases)
+Recent changes can be viewed on GitHub on the [Releases Page](https://github.com/kumuluz/kumuluzee-metrics/releases)
 
 ## Contribute
 
