@@ -1,5 +1,5 @@
 # KumuluzEE Metrics
-[![Build Status](https://img.shields.io/travis/kumuluz/kumuluzee-metrics/master.svg?style=flat)](https://travis-ci.org/kumuluz/kumuluzee-metrics)
+[![KumuluzEE CI](https://github.com/kumuluz/kumuluzee-metrics/actions/workflows/kumuluzee-ci.yml/badge.svg)](https://github.com/kumuluz/kumuluzee-metrics/actions/workflows/kumuluzee-ci.yml)
 
 > Metrics extension for the KumuluzEE microservice framework
 
